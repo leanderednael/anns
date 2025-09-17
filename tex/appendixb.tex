@@ -1,0 +1,415 @@
+\section{Backprop Example}
+\label{appendix:backprop-example}
+
+Activation function $\sigma(t) = \frac{1}{1 + \exp(-t)}$, $\sigma'(t) = \frac{d \sigma}{dt} = \sigma(t) (1 - \sigma(t))$:
+
+\begin{equation}
+\begin{split}
+    & \frac{d \sigma}{dt}
+        = - (1 + \exp(-t))^{-2} \exp(-t) (-1)
+        = \frac{\exp(-t)}{\big( 1 + \exp(-t) \big)^2}
+        = \sigma(t) \frac{\exp(-t)}{1 + \exp(-t)} \\
+        & = \sigma(t) \frac{1 + \exp(-t) - 1}{1 + \exp(-t)}
+        = \sigma(t) \bigg( \frac{1 + \exp(-t)}{1 + \exp(-t)} - \frac{1}{1 + \exp(-t)} \bigg)
+        = \sigma(t) \big( 1 - \sigma(t) \big)
+\end{split}
+\end{equation}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{3.25cm}|c|c|c|}
+        \hline
+        \centering Layer $l = 0$ &
+        Data point $p = 1$ &
+        Data point $p = 2$ &
+        Data point $p = 3$ \\
+        \hline
+        \centering Component $i = 1$ (bias) &
+        $x_{1, 1}^0 = 1.0$ &
+        $x_{1, 2}^0 = 1.0$ &
+        $x_{1, 3}^0 = 1.0$ \\
+        \hline
+        Component $i = 2$ &
+        $x_{2, 1}^0 = 1.0$ &
+        $x_{2, 2}^0 = 0.0$ &
+        $x_{2, 3}^0 = -1.0$ \\
+        \hline
+        Component $i = 3$ &
+        $x_{3, 1}^0 = 1.0$ &
+        $x_{3, 2}^0 = -2.0$ &
+        $x_{3, 3}^0 = 1.0$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $l = 0$: inputs $x_{i, p}^l$}
+\label{table:layer0-inputs}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{3.25cm}|c|c|c|}
+        \hline
+        \centering Layer $l = 1$ &
+        \centering Source $j = 1$ (bias) &
+        Source $j = 2$ &
+        Source $j = 3$ \\
+        \hline
+        Component $i = 2$ &
+        $w_{2, 1}^1 = 0.4$ &
+        $w_{2, 2}^1 = 0.2$ &
+        $w_{2, 3}^1 = -1.2$ \\
+        \hline
+        Component $i = 3$ &
+        $w_{3, 1}^1 = 0.7$ &
+        $w_{3, 2}^1 = -0.7$ &
+        $w_{3, 3}^1 = -0.7$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $l = 1$: weights $w_{i, j}^l$}
+\label{table:layer1-weights}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{2.5cm}|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+        \hline
+        \centering Layer $l = 1$ & Data point $p = 1$ & Data point $p = 2$ & Data point $p = 3$ \\
+        \hline
+        \centering Component $i = 2$ &
+        $\xi_{2, 1}^1 = \sum_{j=1}^3{w_{2, j}^1 x_{j, 1}^0}$
+        $= [0.4, 0.2, -1.2] \cdot [1, 1, 1] = -0.6$ &
+
+        $\xi_{2, 2}^1 = \sum_{j=1}^3{w_{2, j}^1 x_{j, 2}^0}$
+        $= [0.4, 0.2, -1.2] \cdot [1, 0, -2] = 2.8$ &
+
+        $\xi_{2, 3}^1 = \sum_{j=1}^3{w_{2, j}^1 x_{j, 3}^0}$
+        $= [0.4, 0.2, -1.2] \cdot [1, -1, 1] = -1.0$ \\
+        \hline
+        \centering Component $i = 3$ &
+        $\xi_{3, 1}^1 = \sum_{j=1}^3{w_{3, j}^1 x_{j, 1}^0}$
+        $= [0.7, -0.7, -0.7] \cdot [1, 1, 1] = -0.7$ &
+
+        $\xi_{3, 2}^1 = \sum_{j=1}^3{w_{3, j}^1 x_{j, 2}^0}$
+        $= [0.7, -0.7, -0.7] \cdot [1, 0, -2] = 2.1$ &
+
+        $\xi_{3, 3}^1 = \sum_{j=1}^3{w_{3, j}^1 x_{j, 3}^0}$
+        $= [0.7, -0.7, -0.7] \cdot [1, -1, 1] = 0.7$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $l = 1$: interconnections with previous layer $\xi_{i, p} ^{l} = \sum_{j=1}^{N_{l-1}}{w_{i, j}^l x_{j, p}^{l-1}}, N_0 = 3$}
+\label{table:layer1-interconnection}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{2.25cm}|c|c|c|}
+        \hline
+        Layer $l = 1$ &
+        Data point $p = 1$ &
+        Data point $p = 2$ &
+        Data point $p = 3$ \\
+        \hline
+        \centering Component $i = 1$ (bias) &
+        $x_{1, 1}^1 = 1.0$ &
+        $x_{1, 2}^1 = 1.0$ &
+        $x_{1, 3}^1 = 1.0$ \\
+        \hline
+        \centering Component $i = 2$ &
+        $x_{2, 1}^1 = \sigma(\xi_{2, 1}^1) = 0.354$ &
+        $x_{2, 2}^1 = \sigma(\xi_{2, 2}^1) = 0.942$ &
+        $x_{2, 3}^1 = \sigma(\xi_{2, 3}^1) = 0.269$ \\
+        \hline
+        \centering Component $i = 3$ &
+        $x_{3, 1}^1 = \sigma(\xi_{3, 1}^1) = 0.332$ &
+        $x_{3, 2}^1 = \sigma(\xi_{3, 2}^1) = 0.891$ &
+        $x_{3, 3}^1 = \sigma(\xi_{3, 3}^1) = 0.668$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $l = 1$: neurons $x_{i, p}^l = \sigma(\xi_{i, p}^l)$}
+\label{table:layer1-neurons}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{3.25cm}|c|c|c|}
+        \hline
+        Layer $L = 2$ &
+        \centering Source $j = 1$ (bias) &
+        Source $j = 2$ &
+        Source $j = 3$ \\
+        \hline
+        Component $i = 1$ &
+        $w_{1, 1}^2 = 0.4$ &
+        $w_{1, 2}^2 = -0.5$ &
+        $w_{1, 3}^2 = 2.3$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $L = 2$: weights $w_{i, j}^l$}
+\label{table:layer2-weights}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{2.5cm}|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+        \hline
+        \centering Layer $L = 2$ & Data point $p = 1$ & Data point $p = 2$ & Data point $p = 3$ \\
+        \hline
+        \centering Component $i = 2$ &
+        $\xi_{1, 1}^2 = \sum_{j=1}^3{w_{1, j}^2 x_{j, 1}^1}$
+        $= [0.4, -0.5, 2.3] \cdot [1.0, 0.354, 0.332] = 0.986$ &
+
+        $\xi_{1, 2}^2 = \sum_{j=1}^3{w_{1, j}^2 x_{j, 2}^1}$
+        $= [0.4, -0.5, 2.3] \cdot [1.0, 0.942, 0.891] = 1.978$ &
+
+        $\xi_{1, 3}^2 = \sum_{j=1}^3{w_{1, j}^2 x_{j, 3}^1}$
+        $= [0.4, -0.5, 2.3] \cdot [1.0, 0.269, 0.668] = 1.802$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $L = 2$: interconnections with previous layer $\xi_{i, p} ^{l} = \sum_{j=1}^{N_{l-1}}{w_{i, j}^l x_{j, p}^{l-1}}, N_1 = 3$}
+\label{table:layer2-interconnection}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{2.5cm}|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+        \hline
+        \centering Layer $L = 2$ & Data point $p = 1$ & Data point $p = 2$ & Data point $p = 3$ \\
+        \hline
+        \centering Target & $x_{1, 1}^d = -1.0$ & $x_{1, 1}^d = 1.0$ & $x_{1, 1}^d = 1.0$ \\
+        \hline
+        \centering MSE &
+        $E_1 = \frac{1}{2} ( x_{1, 1}^2 - x_{1, 1}^d )^2$
+        $= \frac{1}{2} (-1.0 - 0.986)^2$ 
+        $= 1.972$ &
+        $E_2 = \frac{1}{2} ( x_{1, 2}^2 - x_{1, 2}^d )^2$
+        $= \frac{1}{2} (1.0 - 1.978)^2$ 
+        $= 0.478$ &
+        $E_3 = \frac{1}{2} ( x_{1, 3}^2 - x_{1, 3}^d )^2$
+        $= \frac{1}{2} (1.0 - 1.802)^2$ 
+        $= 0.322$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $L = 2$: MSE loss $E_p = \frac{1}{2} \sum_{j=1}^{N_L}{( x_{j, p}^L - x_{j, p}^d )^2}, N_L = N_2 = 1$}
+\label{table:layer2-loss}
+\end{table}
+
+\newpage
+
+\begin{equation}
+    \min_{w_{i, j}^l}{E} = \min_{w_{i, j}^l}{\frac{1}{P} \sum_{p=1}^P{E_p}}
+\end{equation}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{2.25cm}|p{3.75cm}|p{3.75cm}|p{3.75cm}|}
+        \hline
+        Layer $L = 2$ &
+        Data point $p = 1$ &
+        Data point $p = 2$ &
+        Data point $p = 3$ \\
+        \hline
+        \centering Component $i = 1$ &
+
+        $\delta_{1, 1}^2 = ( x_{1, 1}^2 - x_{1, 1}^d )$
+        $\sigma'(\xi_{1, 1}^2)$
+        $= (0.986 + 1) \sigma'(0.986) = 0.393$ &
+
+        $\delta_{1, 2}^2 = ( x_{1, 2}^2 - x_{1, 2}^d )$
+        $\sigma'(\xi_{1, 2}^2)$
+        $= (1.978 - 1) \sigma'(1.978) = 0.104$ &
+
+        $\delta_{1, 3}^2 = ( x_{1, 3}^2 - x_{1, 3}^d )$
+        $\sigma'(\xi_{1, 3}^2)$
+        $= (1.802 - 1) \sigma'(1.802) = 0.098$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $L = 2$: deltas $\delta_{i, p}^L = ( x_{i, p}^L - x_{i, p}^d ) \sigma'(\xi_{i, p}^L)$}
+\label{table:layer2-delta}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{1cm}|p{4cm}|p{4cm}|p{4cm}|}
+        \hline
+        \centering $l = 1$ &
+        Data point $p = 1$ &
+        Data point $p = 2$ &
+        Data point $p = 3$ \\
+        \hline
+        \centering $i = 2$ &
+
+        $\delta_{2, 1}^1 = \Big( \sum_{j=1}^1{ \delta_{j, 1}^2 w_{j, 2}^2 } \Big)$
+        $\sigma'(\xi_{2, 1}^1)$
+        $= 0.393 \times (-0.5) \times \sigma'(-0.6)$
+        $= -0.045$ &
+
+        $\delta_{2, 2}^1 = \Big( \sum_{j=1}^1{ \delta_{j, 2}^2 w_{j, 2}^2 } \Big)$
+        $\sigma'(\xi_{2, 2}^1)$
+        $= 0.104 \times (-0.5) \times \sigma'(2.8)$
+        $= -0.003$ &
+
+        $\delta_{2, 3}^1 = \Big( \sum_{j=1}^1{ \delta_{j, 3}^2 w_{j, 2}^2 } \Big)$
+        $\sigma'(\xi_{2, 3}^1)$
+        $= 0.098 \times (-0.5) \times \sigma'(-1.0)$
+        $= -0.010$ \\
+        \hline
+        \centering $i = 3$ &
+
+        $\delta_{3, 1}^1 = \Big( \sum_{j=1}^1{ \delta_{j, 1}^2 w_{j, 3}^2 } \Big)$
+        $\sigma'(\xi_{3, 1}^1)$
+        $= 0.393 \times 2.3 \times \sigma'(-0.7)$
+        $= 0.200$ &
+
+        $\delta_{3, 2}^1 = \Big( \sum_{j=1}^1{ \delta_{j, 2}^2 w_{j, 3}^2 } \Big)$
+        $\sigma'(\xi_{3, 2}^1)$
+        $= 0.104 \times 2.3 \times \sigma'(2.1)$
+        $= 0.023$ &
+
+        $\delta_{3, 3}^1 = \Big( \sum_{j=1}^1{ \delta_{j, 3}^2 w_{j, 3}^2 } \Big)$
+        $\sigma'(\xi_{3, 3}^1)$
+        $= 0.098 \times 2.3 \times \sigma'(0.7)$
+        $= 0.050$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $l = 1$: deltas $\delta_{i, p}^l = \Big( \sum_{j=1}^{N_{l+1}}{ \delta_{j, p}^{l+1} w_{j, i}^{l+1} } \Big) \sigma'(\xi_{i, p}^l), N_2 = 1$}
+\label{table:layer1-delta}
+\end{table}
+
+\newpage
+
+Learning rate $\eta = 1$.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{1.25cm}|p{4cm}|p{4cm}|p{4cm}|}
+        \hline
+        \centering $L = 2$ &
+        Source $j = 1$ &
+        Source $j = 2$ &
+        Source $j = 3$ \\
+        \hline
+        \centering $i = 1$ &
+
+        $\Delta w_{1, 1}^2$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{1, p}^2 x_{1, p}^1 }$
+        $= - \frac{1}{3} [0.393, 0.104, 0.098] \cdot [1.0, 1.0, 1.0]$
+        $= -0.198$ &
+
+        $\Delta w_{1, 2}^2$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{1, p}^2 x_{2, p}^1 }$
+        $= - \frac{1}{3} [0.393, 0.104, 0.098] \cdot [0.354, 0.942, 0.269]$
+        $= -0.088$ &
+
+        $\Delta w_{1, 3}^2$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{1, p}^2 x_{3, p}^1 }$
+        $= - \frac{1}{3} [0.393, 0.104, 0.098] \cdot [0.332, 0.891, 0.668]$
+        $= -0.096$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $L = 2$: Weight changes $\Delta w_{i, j}^L = - \eta \frac{\partial E}{\partial w_{i, j}^L} = - \eta \frac{1}{P} \sum_{p=1}^P{ \delta_{i, p}^L x_{j, p}^{L-1} }, P = 3$}
+\label{table:layer2-weight-change}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{1.25cm}|p{4cm}|p{4cm}|p{4cm}|}
+        \hline
+        \centering $l = 1$ &
+        Source $j = 1$ &
+        Source $j = 2$ &
+        Source $j = 3$ \\
+
+        \hline
+        \centering $i = 2$ &
+
+        $\Delta w_{2, 1}^1$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{2, p}^1 x_{1, p}^0 }$
+        $= - \frac{1}{3} [-0.045, -0.003,$
+        $-0.010] \cdot [1.0, 1.0, 1.0]$
+        $= 0.019$ &
+
+        $\Delta w_{2, 2}^1$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{2, p}^1 x_{2, p}^0 }$
+        $= - \frac{1}{3} [-0.045, -0.003,$
+        $-0.010] \cdot [1.0, 0, -1.0]$
+        $= 0.012$ &
+
+        $\Delta w_{2, 3}^1$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{2, p}^1 x_{3, p}^0 }$
+        $= - \frac{1}{3} [-0.045, -0.003,$
+        $-0.010] \cdot [1.0, -2, 1.0]$
+        $= 0.016$ \\
+
+        \hline
+        \centering $i = 3$ &
+
+        $\Delta w_{3, 1}^1$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{3, p}^1 x_{1, p}^0 }$
+        $= - \frac{1}{3} [0.200, 0.023, 0.049] \cdot [1.0, 1.0, 1.0]$
+        $= -0.091$ &
+
+        $\Delta w_{3, 2}^1$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{3, p}^1 x_{2, p}^0 }$
+        $= - \frac{1}{3} [0.200, 0.023, 0.049] \cdot [1.0, 0, -1.0]$
+        $= -0.050$ &
+
+        $\Delta w_{3, 3}^1$
+        $= - \frac{1}{3} \sum_{p=1}^3{ \delta_{3, p}^1 x_{3, p}^0 }$
+        $= - \frac{1}{3} [0.200, 0.023, 0.049] \cdot [1.0, -2, 1.0]$
+        $= -0.068$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $l = 1$: Weight changes $\Delta w_{i, j}^l = - \eta \frac{\partial E}{\partial w_{i, j}^l} = - \eta \frac{1}{P} \sum_{p=1}^P{ \delta_{i, p}^l x_{j, p}^{l-1} }, P = 3$}
+\label{table:layer1-weight-change}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{1.25cm}|p{4cm}|p{4cm}|p{4cm}|}
+        \hline
+        \centering $L = 2$ &
+        \centering Source $j = 1$ (bias) &
+        Source $j = 2$ &
+        Source $j = 3$ \\
+        \hline
+        \centering $i = 1$ &
+        $w_{1, 1}^2 = w_{1, 1}^2 + \Delta w_{1, 1}^2$
+        $= 0.4 - 0.198 = 0.202$ &
+        $w_{1, 2}^2 = w_{1, 2}^2 + \Delta w_{1, 2}^2$
+        $= -0.5 - 0.088 = -0.588$ &
+        $w_{1, 3}^2 = w_{1, 3}^2 + \Delta w_{1, 3}^2$
+        $= 2.3 - 0.096 = 2.204$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $L = 2$: updated weights $w_{i, j}^l = w_{i, j}^l + \Delta w_{i, j}^l$}
+\label{table:layer2-updated-weights}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|m{1.25cm}|p{4cm}|p{4cm}|p{4cm}|}
+        \hline
+        \centering Layer $l = 1$ &
+        \centering Source $j = 1$ (bias) &
+        Source $j = 2$ &
+        Source $j = 3$ \\
+        \hline
+        \centering $i = 2$ &
+        $w_{2, 1}^1 = w_{2, 1}^1 + \Delta w_{2, 1}^1$
+        $= 0.4 + 0.019 = 0.419$ &
+        $w_{2, 2}^1 = w_{2, 2}^1 + \Delta w_{2, 2}^1$
+        $= 0.2 + 0.012 = 0.212$ &
+        $w_{2, 3}^1 = w_{2, 3}^1 + \Delta w_{2, 3}^1$
+        $= -1.2 + 0.016 = -1.184$ \\
+        \hline
+        \centering $i = 3$ &
+        $w_{3, 1}^1 = w_{3, 1}^1 + \Delta w_{3, 1}^1$
+        $= 0.7 - 0.091 = 0.609$ &
+        $w_{3, 2}^1 = w_{3, 2}^1 + \Delta w_{3, 2}^1$
+        $= -0.7 - 0.050 = -0.75$ &
+        $w_{3, 3}^1 = w_{3, 3}^1 + \Delta w_{3, 3}^1$
+        $= -0.7 - 0.068 = -0.768$ \\
+        \hline
+    \end{tabular}
+\caption{Layer $l = 1$: updated weights $w_{i, j}^l = w_{i, j}^l + \Delta w_{i, j}^l$}
+\label{table:layer1-updated-weights}
+\end{table}

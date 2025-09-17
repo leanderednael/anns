@@ -1,0 +1,337 @@
+\section{Deep Feature Learning}
+
+\subsection{Image Reconstruction with Autoencoders}
+
+An autoencoder performs nonlinear dimensionality reduction
+by minimising the \textit{reconstruction} error,
+subject to a \textit{sparsity} constraint in the number of hidden units -
+enforcing learning not the identity which would be trivial but a lower-dimensional latent structure.
+
+The sparser the architecture, the more difficult it is to learn a meaningful representation
+(as characterised by the reconstruction loss, as optimisation metric).
+$\geq 32$ hidden units trained for $\geq 10$ epochs are sufficient to give good reconstructed images.
+
+\vspace{2.5pt}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Train/Test Losses & 16 & 32 & 64 & 128 Hidden Units \\
+\hline
+Epoch 1 & 2.79 / 1.93 & 2.33 / 1.44 & 1.99 / 1.20 & 1.69 / 0.93 \\
+\hline
+Epoch 10 & 0.98 / 0.94 & 0.52 / 0.49 & 0.27 / 0.25 & 0.13 / 0.13 \\
+\hline
+Epoch 20 & 0.91 / 0.88 & 0.45 / 0.43 & 0.20 / 0.20 & 0.08 / 0.09 \\
+\hline
+Epoch 40 & 0.88 / 0.85 & 0.43 / 0.42 & 0.18 / 0.18 & - \\
+\hline
+Epoch 80 & 0.85 / 0.83 & - & - & - \\
+\hline
+\end{tabular}
+\caption{Results for training an autoencoder on the MNIST dataset ($28 \times 28 = 784$ dims)}
+\label{tab:ae-results}
+\end{table}
+
+\vspace{-10pt}
+
+\subsection{Image Classification with Stacked Autoencoders}
+
+\paragraph{Pre-Training}
+
+A stacked autoencoder is (pre-)trained by greedy layer-wise training on successive layers of autoencoders.
+The encoder plus a FC layer can be used as a classifier.
+
+Pre-training has the \textit{benefits} of
+learning features independently of the final task in an unsupervised fashion (e.g. there may not be enough annotated data available for supervised learning),
+and layer-by-layer which avoids vanishing gradients that can occur if training deep networks (e.g. with potentially badly initialised weights) from scratch.
+
+\paragraph{Network Architecture}
+
+$256$ \& $64$ hidden units in the first \& second layer, respectively,
+give the highest test set accuracy.
+A third layer might improve performance for complex features.
+Generally fine-tuning is used to improve performance on a supervised task.
+
+\vspace{5pt}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline
+Test accuracy & (64, 32) & (128, 32) & (128, 64) & (256, 64) & (256, 128) & (512, 128) \\
+\hline
+Pre-trained & 0.104 & 0.108 & 0.098 & 0.215 & 0.108 & 0.163 \\
+\hline
+Fine-tuned & 0.929 & 0.914 & 0.930 & 0.916 & 0.914 & 0.900 \\
+\hline
+\end{tabular}
+\caption{Accuracy on the test set for different number of hidden units in layers 1 and 2}
+\label{tab:sae-results}
+\end{table}
+
+\vspace{-12.5pt}
+
+\paragraph{Fine-Tuning}
+
+In greedy layer-wise training, the parameters of each layer are trained individually (with the other layers' parameters being frozen in the meantime).
+Fine-tuning runs backpropagation end-to-end on the whole model
+to update and improve ("fine-tune") the (pre-trained) parameters
+across all layers, for a specific \textit{supervised} task.
+
+Fine-tuning improves performance on the classification task across the board for all architectures in the experiment.
+Note that the network that achieved the best test metric pre-trained does not perform best following fine-tuning.
+But in general, with fine-tuning, test accuracy is very high across the board, and
+networks with fewer hidden units are able to achieve very good test accuracy.
+In particular, choosing double the number of hidden units in the first relative to the second layer achieves the best results in the experiment.
+
+\newpage
+
+\subsection{Convolutional Neural Networks (CNNs)}
+\label{subsection:cnns}
+
+\subsubsection{Convolutions}
+
+The dimensionality of the output of a convolutional layer is:
+
+\begin{equation}
+    \qquad \qquad \quad
+    \Big\lfloor \frac{n_h - k_h + p_h + s_h}{s_h} \Big\rfloor \times
+    \Big\lfloor \frac{n_w - k_w + p_w + s_w}{s_w} \Big\rfloor
+    \qquad \qquad \quad \text{\citep{zhang2023d2l}}
+\end{equation}
+
+For example:
+$\dim\big( X_{4 \times 4} *^{p=0}_{s=2} K_{2 \times 2} \big) =$
+$\lfloor (4 - 2 + 0 + 2) / 2 \rfloor \times \lfloor (4 - 2 + 0 + 2) / 2 \rfloor = 2 \times 2$.
+
+\begin{equation}
+    \begin{bmatrix}
+        2 & 5 & 4 & 1 \\
+        3 & 1 & 2 & 0 \\
+        4 & 5 & 7 & 1 \\
+        1 & 2 & 3 & 4
+    \end{bmatrix} *^{p=0}_{s=2} \begin{bmatrix}
+        1 & 0 \\
+        0 & 1
+    \end{bmatrix}
+    = \begin{bmatrix}
+        \sum{\Bigg( \begin{bmatrix}
+            2 & 5 \\
+            3 & 1
+        \end{bmatrix} \odot \begin{bmatrix}
+            1 & 0 \\
+            0 & 1
+        \end{bmatrix} \Bigg)} \,
+        \sum{\Bigg( \begin{bmatrix}
+            4 & 1 \\
+            2 & 0
+        \end{bmatrix} \odot \begin{bmatrix}
+            1 & 0 \\
+            0 & 1
+        \end{bmatrix} \Bigg)} \\ \\
+        \sum{\Bigg( \begin{bmatrix}
+            4 & 5 \\
+            1 & 2
+        \end{bmatrix} \odot \begin{bmatrix}
+            1 & 0 \\
+            0 & 1
+        \end{bmatrix} \Bigg)} \,
+        \sum{\Bigg( \begin{bmatrix}
+            7 & 1 \\
+            3 & 4
+        \end{bmatrix} \odot \begin{bmatrix}
+            1 & 0 \\
+            0 & 1
+        \end{bmatrix} \Bigg)}
+    \end{bmatrix}
+    = \begin{bmatrix}
+        3 & 4 \\
+        6 & 11
+    \end{bmatrix}
+\end{equation}
+
+CNNs differ from fully connected (FC) networks: \citep{Goodfellowetal2016}
+
+\begin{enumerate}
+\setlength{\itemsep}{0pt}
+    \item \textit{Local connectivity / sparsity of connections}:
+    neurons closer to each other are likely more related than ones farther away due to locality in images -
+    thus, in each layer, each output value depends on a much smaller number of inputs, as opposed to FC.
+    \item \textit{Parameter sharing}:
+    a feature detector (e.g. a vertical edge detector)
+    that is useful in one part of the image is probably useful in another part of the image \citep{ng2011mlcourse} -
+    sharing weights across the image further reduces the number of parameters relative to FC.
+\end{enumerate}
+
+Local connectivity and parameter sharing enable CNNs to achieve
+good generalisation even with less training data
+and to be able to process larger images.
+
+Parameter sharing and pooling\footnote{
+    The second main component in CNNs is pooling \citep{dumoulin2018guideconvolutionarithmeticdeep},
+    e.g. avg (linear operation), min/max (nonlinear).
+    A pooling layer detects features regardless of their position in the image by trading off spatial resolution.
+    } enable \textit{translation and shift invariance}, $f(t(x)) = f(x)$, i.e. $(f \circ t) = f$, s.t. features can be detected in any position in an image.
+
+    Moreover, while deep neural networks in general leverage \textit{(hierarchical) feature learning}\footnote{
+    While classical methods, e.g. for edge detection, require features to be user-defined, such as \textit{fixed} convolution kernels,
+    neural networks learn features themselves directly from the data
+    and hierarchically, i.e. different layers learning features of different granularity such as edges, etc.
+}, CNN's architectural properties make them particularly effective for images.
+
+\subsubsection{Digit Recognition with Convolutional Neural Networks (CNNs)}
+
+An incremental training strategy \citep{tuningplaybookgithub} is applied:
+first the number of convolutional layers and filters is tuned, the kernel size, and then the number of fully connected layers.
+
+The number of convolutional layers in a CNN determines the depth of hierarchical feature extraction, allowing the network to learn increasingly abstract representations of the input.
+Each layer captures progressively higher-level features from the image.
+The number of filters in each convolutional layer determines how many distinct features, such as edges or higher-dimensional shapes, the layer can detect in parallel.
+
+Digits consist of a small number of similar patterns like loops, vertical, horizontal and diagonal lines.
+Two or three conv layers with a suitable number of filters should suffice.
+
+A model architecture with three conv, one FC layer, kernel size 3 is selected.
+
+\subsection{Attention and Transformers}
+
+\subsubsection{The Self-Attention Mechanism}
+
+In cognitive science, attention is defined as the mechanism of selectively focusing on a particular aspect of information that is of interest \citep{gilhooly2014cognitive}.
+In information retrieval, natural language processing and other AI applications,
+attention is a neural network architecture designed to
+retrieve a weighted combination of values given a query's similarity to the value's key,
+such as by (scaled) dot product, $\frac{\langle \textbf{q}_i, \textbf{k}_j \rangle}{\sqrt{d}}$,
+or cosine similarity, $\frac{\langle \textbf{q}_i, \textbf{k}_j \rangle}{\lVert \textbf{q}_i \rVert \lVert \textbf{k}_j \rVert}$. \citep{prince2023understanding,ye2022geometry}
+
+\vspace{-5pt}
+\begin{equation}
+    \text{Attention}(q_i, \textbf{k}, \textbf{v}) = \sum_{j=1}^n{ \text{Similarity}(q_i, k_j) \times v_j }
+\end{equation}
+\vspace{-5pt}
+
+This addresses a key limitation of \textit{static embeddings}, e.g. GloVe, Word2Vec,
+which assign a fixed representation to words regardless of context.
+Attention enables \textit{dynamic embeddings}, e.g. BERT, GPT, which incorporate contextual information
+by computing each token's representation as a weighted combination of all sequence tokens.
+This allows polysemous words like "bank" to receive different representations depending on context.
+
+\vspace{-5pt}
+
+\paragraph{Interpretation of Q, K, V matrices}
+
+The \textit{key}, $k_j$, is an index of what information position $j$ contains.
+The \textit{value}, $v_j$, contains the actual information content of position $j$ in the output.
+Similarity between queries, $q_i$, and keys, $k_j$, determines how much the value
+corresponding to the respective key should contribute to the output for each query.
+
+In \textit{self-attention}, the query and the key are both from the same sequence.
+That is, self-attention computes a representation of the same sequence or input by determining which parts of the sequence should be focused on, i.e. 'attended to'.\footnote{
+    Other forms of attention include
+    \textit{cross(-domain)} or encoder-decoder attention where the query comes from the \textit{decoder} while the key and value are from the \textit{encoder} as used in sequence-to-sequence tasks like machine translation, and
+    \textit{cross-modal} attention where the query, key and value are from different \textit{modalities} (e.g. word embeddings as a query for images) as used in multimodal transformers like CLIP.
+    Moreover, \textit{masked} self-attention involves masking to prevent later tokens from influencing earlier tokens in order to ensure that the output at each step only attends to already-seen parts of the sequence.
+    \citep{prince2023understanding,ye2022geometry}
+}
+The self-attention mechanism as defined in the original paper \citep{vaswani2023attentionneed}
+applies softmax\footnote{
+    Temperature scaling can be used to control the sharpness of the softmax probability distribution:
+    higher temperatures produce a more uniform, lower temperatures a more concentrated distribution.
+} as similarity and normalisation
+to ensure attention weights sum to 1 and are non-negative.\footnote{
+    Further, it is important to note that \textit{positional encodings} are needed to distinguish between sequences with identical tokens in a different order,
+    since attention is \textit{permutation-equivariant} to the inputs. \citep{prince2023understanding}
+}
+
+\vspace{-5pt}
+\begin{equation}
+    \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d}}\right) V
+\end{equation}
+\vspace{-15pt}
+
+\paragraph{Dimensional relationship between attention scores and outputs}
+
+Given input sequence length $n$ and the model's embedding dimension $d$, inputs $X$ are $n \times d$, and projection weights $W_q, W_k, W_v$ are $d \times d$
+s.t. X projected onto the weights gives queries matrix $Q = X W_q$, keys matrix $K = X W_k$, values matrix $V = X W_v$ all of dimensions $n \times d$,
+where the rows each represent a query / key / value vector for a single input.
+
+Every query is compared to every key, i.e. the (scaled) dot product $Q K^T$ is $n \times $n,
+s.t. the \textit{attention scores} have shape $n \times n$ - unchanged in dimension by softmax normalisation.
+
+Finally, the \textit{attention outputs} are obtained from the dot product of the attention scores and the values matrix $V$
+and therefore have shape $(n \times n) \times (n \times d) = n \times d$.
+Each output row corresponds to an input
+and is a weighted sum of values by attention scores.
+
+Query/key dimension $d_q$ and value dimension $d_v$ can differ:
+$d_v \neq d_q$ decouples similarity computation (on queries, keys) from information aggregation (with values). \citep{prince2023understanding}
+
+\subsubsection{Vision Transformers (ViT)}
+
+The Transformer architecture \citep{vaswani2023attentionneed} leverages the self-attention mechanism along with a residual connection, layer normalisation, feedforward neural network (FFNN), and multiple encoder blocks.
+A major improvement over RNNs is that transformers are able to process the entire sequence in parallel.
+Moreover, while CNNs and RNNs are modality-specific, the attention mechanism can in principle be applied to any modality\footnote{
+    Creating the embeddings for different modalities for Transformers is modality-specific.
+    There is also a limit to the granularity with which they can be created, due to quadratic scaling of self-attention.
+    Tokenisation in NLP produces embeddings that are relatively granular while still being scalable. \citep{prince2023understanding,ye2022geometry}
+}. \citep{prince2023understanding,ye2022geometry}
+
+The Vision Transformer (ViT) \citep{dosovitskiy2020vit} creates patch embeddings from an image
+by creating a grid of $16 \times 16$ patches.
+These are projected through a learnable linear transformation that flattens a 2D image into a $D$-dimensional vector,
+a positional encoding is added,
+and the embeddings are passed into the encoder as inputs.
+The architecture consists of multi-head self-attention layers and multi-layer perceptrons which are alternated.
+A class token, \texttt{<cls>}, gives the predictions of the class probabilities. \citep{prince2023understanding,ye2022geometry}
+
+\paragraph{Network Size and Hyperparameter Tuning}
+
+The default baseline model \citep{Goodfellowetal2016} uses an embedding dimension of 64, 6 layers, 8 heads, a MLP dimension of 128.
+Increasing the \textit{embedding dimension} improves train and eval predictions.
+Comparing \textit{network depth} shows that deeper networks perform better but with increased computational cost, training for longer.
+Reducing \textit{attention heads} improves generalisation performance, indicating that not that many heads are needed when the dataset is not that large.
+The small to modest \textit{feedforward network dimension} has the best effect on out-of-sample performance.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    \hline
+    \multicolumn{4}{|c|}{Architecture} & Dropout & Epochs & Train (Loss / Acc) & Eval (Loss / Acc) \\
+    \hline
+    64 & 6 & 8 & 128 & 0.0 & 15 & 0.0699 / 99.07\% & 0.0583 / 98.12\% \\
+    \hline
+    \textbf{32} & 6 & 8 & 128 & 0.0 & 23 & 0.0323 / 99.16\% & 0.0712 / 98.00\% \\
+    \hline
+    \textbf{128} & 6 & 8 & 128 & 0.0 & 18 & 0.0003 / 99.57\% & 0.0516 / 98.59\% \\
+    \hline
+    64 & \textbf{4} & 8 & 128 & 0.0 & 15 & 0.0182 / 99.15\% & 0.0591 / 98.15\% \\
+    \hline
+    64 & \textbf{8} & 8 & 128 & 0.0 & 22 & 0.0349 / 99.61\% & 0.0562 / 98.61\% \\
+    \hline
+    64 & 6 & \textbf{4} & 128 & 0.0 & 18 & 0.0129 / 99.49\% & 0.0563 / 98.31\% \\
+    \hline
+    64 & 6 & 8 & \textbf{64} & 0.0 & 14 & 0.0291 / 98.94\% & 0.0636 / 98.11\% \\
+    \hline
+    64 & 6 & 8 & \textbf{256} & 0.0 & 11 & 0.0565 / 98.20\% & 0.0596 / 98.03\% \\
+    \hline
+    64 & 6 & 8 & 128 & \textbf{0.1} & 15 & 0.0117 / 98.64\% & 0.0513 / 98.43\% \\
+    \hline
+    64 & 6 & 8 & 128 & \textbf{0.2} & 20 & 0.0351 / 98.90\% & 0.0512 / 98.49\% \\
+    \hline
+    \end{tabular}
+    \caption{Vision Transformer (ViT) hyperparameter tuning results}
+    \label{tab:vit-results}
+\end{table}
+\vspace{-20pt}
+
+\paragraph{Regularisation}
+
+Early stopping with patience 5 serves as (implicit) regularisation (and saves resources). It can "be used \dots alone or in conjunction with other \dots strategies". \citep{Goodfellowetal2016}
+
+Further, dropout\footnote{
+    "Dropout provides an inexpensive approximation to training and evaluating a bagged ensemble" \citep{Goodfellowetal2016}.
+} is a commonly used regularisation technique that randomly sets a fraction of input units to zero during training, preventing the model from becoming overly dependent on specific features.
+Given ViT's large parameter counts and potential for memorising training data,
+10-20\% dropout is beneficial for improved generalisation.

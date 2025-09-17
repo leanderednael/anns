@@ -1,0 +1,35 @@
+\section{Google Research Tuning Playbook}
+
+Some notes from the Google Research Tuning Playbook \citep{tuningplaybookgithub}: \\
+
+Start with the most popular \textbf{optimiser} for the problem at hand / start something simple as a baseline,
+e.g. with SGD with fixed momentum, or Adam with fixed $\epsilon, \beta_1, \beta_2$.
+Then, if necessary, be prepared to tune all hyperparameters of the chosen optimiser, and to also have to tune model parameters. \\
+
+\textbf{Batch size} is the key factor in determining training time and compute.
+A higher batch size will often reduce training time - which is beneficial because it allows for
+more time for hyperparameter tuning and general reduced latency of the dev cycle.
+
+\textit{Batch size is not a hyperparameter for validation set performance}.
+As long as all hyperparameters are well-tuned, especially the learning rate, regularisation and sufficient training steps, the batch size should not impact results.
+
+\begin{itemize}
+    \item With a smaller batch size, there is more noise due to the sample variance which can have a regularising effect.
+    \item Larger batch sizes can be more prone to overfitting and may require stronger regularisation.
+\end{itemize}
+
+\textit{Changing the batch size requires tuning the hyperparameters again}! \\
+
+Run training jobs at batch sizes \textit{increasing power of 2} for a small number of steps until the job exceeds memory.
+If the batch size doubles, throughput should also double if the accelerator memory is not yet saturated.
+This is the best max batch size; there is no point in increasing batch size if it increases training time. \\
+
+\textbf{The incremental tuning strategy}:
+Start with a simple configuration and incrementally make improvements, based on strong evidence to avoid adding unnecessary complexity. \\
+
+\textbf{Exploration vs. exploitation}:
+Exploration, e.g. with \textit{quasi-random search}, should reveal the most essential hyperparameters to tune and sensible ranges for them.
+Then use Bayesian optimisation tools to automatically find the best hyperparameter configuration. \\
+
+If training is \textit{compute-bound}, \text{training time} comes down to how long one is willing to wait.
+If it is \textit{not compute-bound}, training time is determined by overfitting, training for long enough to achieve the best generalisation (and then performing \textit{retrospective optimal checkout selection}).

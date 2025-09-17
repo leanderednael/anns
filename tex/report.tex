@@ -1,0 +1,47 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[toc,page]{appendix}
+\usepackage{array}
+\usepackage{bm}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{paracol}
+\usepackage[numbers]{natbib}
+\usepackage{wrapfig}
+\usepackage{xcolor}
+\geometry{a4paper, margin=1in}
+
+\title{Artificial Neural Networks \& Deep Learning: \\ Report}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+\thispagestyle{empty}
+\setcounter{page}{0}
+\newpage
+
+\input{section1.tex} \newpage
+\input{section2.tex} \newpage
+\input{section3.tex} \newpage
+\input{section4.tex} \newpage
+
+\appendix
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+\input{appendixa.tex} \newpage
+\input{appendixb.tex} \newpage
+\input{appendixc.tex} \newpage
+\input{appendixd.tex} \newpage
+
+\bibliographystyle{plainnat}
+\bibliography{references} \newpage
+
+\end{document}

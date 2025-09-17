@@ -1,0 +1,2217 @@
+\section{Review Questions}
+
+
+\subsection{Multilayer feedforward networks and backpropagation}
+
+\paragraph{Explain similarities and differences between biological and artificial neural networks.}
+
+A neuron has three main parts: a cell body,
+branching extensions called dendrites for receiving input,
+an axon that carries the neuron's output to the dendrites of other neurons.
+It is estimated that humans have over $10^{11}$ neurons and $10^{14}$ synapses.
+Switching time is slower than in transistors but connectivity is higher than in supercomputers.
+
+The McCulloch-Pitts model of a neuron consists of:
+incoming signals $x_i$,
+interconnection weights $w_i$,
+a bias term (i.e. threshold value) $b$,
+an activation $a$,
+nonlinearity $f(\cdot)$,
+and output $y$,
+s.t.  $a = \sum_i{w_i x_i} + b, \, y = f(a)$.
+
+This model of artificial neural networks gave rise to multilayer perceptrons (MLPs).
+Such neural networks obtain their information during training, and store the information in the weights.
+It learns a nonlinear map from given patterns, and is robus against inaccuracies in data.
+For example, consider the XOR problem which cannot be separated by a straight line and requires an MLP
+(cf. VC-dimension).
+
+This paradigm is thus closer to the brain works than how traditional digital computers work
+(which are based on purely on logic, software algorithms and sequential processing, i.e. which are more rigid)
+Still, the brain remains much more complex (i.e. in the number of neurons) and energetically efficient
+(albeit at lower processing speeds than artificial neural networks).
+
+\paragraph{What are critical design considerations in neural networks?}
+
+The number of neurons,
+objective (optimiser, may include regularisation and other terms) / cost (minimiser, typically error / average loss over training set) function,
+training algorithm,
+how to avoid local minima, 
+when to stop training,
+how to guarantee generalisation,
+how to deal with noisy data.
+
+\paragraph{Explain similarities and differences between multilayer perceptron (MLP) and radial basis function (RBF) networks.}
+
+A feedforward network is called so because there are no feedback connections in which outputs of the model are fed back into itself (as in recurrent neural networks).
+
+MLPs primarily use nonlinear activation functions
+while RBF networks use radial basis functions as activation functions.
+
+Nonlinear activation functions commonly used in MLPs include the
+rectified linear unit (ReLU, $\max(0, x)$) and sigmoid functions ($\sigma(x) = 1 / (1 + e^{-x})$).\footnote{
+    Derivatives of $\sigma(\cdot)$:
+    sigmoid $\sigma(x) = \frac{1}{1 + \exp(-x)}, \, \sigma' = \sigma (1 - \sigma)$,
+    tanh $\tanh(x) = \frac{1 - \exp(-2x)}{1 + \exp(-2x)}, \, \sigma' = 1 - \sigma^2$,
+    ReLU $\max(0, x), \, \sigma' = \begin{cases}
+        0 & \text{if } x \leq 0 \\
+        1 & \text{if } x > 0
+    \end{cases}$
+} For input and output layer neurons, a linear characteristic is usually chosen.
+
+The term "radial basis function" refers to a class of functions whose output depends only on the distance from a center point.
+These functions are radially symmetric around the center, where there is a peak:
+$y = \sum_{i=1}^{n_h}{w_i h(\lVert x - c_i \rVert)}$ where $n_h$ is the number of hidden neurons, $c_i \in \mathbb{R}^m$ the centre points.
+
+The most common RBF is the Gaussian activation function $y = \sum_{i=1}^{n_h}{w_i e^{- \frac{\lVert x - c_i \rVert_2^2}{\sigma_i^2}} }$.
+Others are inverse multiquadratics (IMQs) $\phi(r) = \frac{1}{\sqrt{1 + (\varepsilon r)^2}}$
+where $r$ is the Euclidean distance between the input and a centre point, and $\varepsilon$ controls the smoothness and width of the function.
+The inverse multiquadratic function decreases as the distance $r$ increases but never reaches zero.
+
+Park and Sandberg (1991) showed that it is possible to approximate any
+continuous nonlinear function by means of an RBF network.
+Neural networks with unbounded activation functions (e.g. ReLU)
+is a universal approximator [Sonoda \& Murata, 2017]
+
+\paragraph{What are advantages or disadvantages of multilayer perceptrons versus polynomial expansions?}
+
+Both MLPs and polynomial expansions can be used to approximate functions.
+
+But polynomial expansion is more strongly affected by the curse of dimensionality - where the number of possible configurations of the parameters is much larger than the number of training examples.
+The approximation error is $\mathcal{O}(\frac{1}{n_p^{2/n}}); \, n_p =$ the number of terms in the expansion, $n =$ the dimension of the input space.
+
+Neural networks avoid the curse of dimensionality in the sense that
+\textit{the approximation error is independent of the dimension of the input space} $n$
+(under certain conditions).
+The approximation error for an MLP with one hidden layer is $\mathcal{O}(\frac{1}{n_h}); n_h =$ the number of hidden units.
+
+$$y = f(x_1, x_2) \, : \, y = a_1 x_1 + a_2 x_2 + a_{11} x_1^2 + a_{22} x_2^2 + a_{12} x_1 x_2 + \dots \, \text{ vs. } y = w^T \tanh(V \begin{bmatrix}
+    x_1 \\ x_2 \\ x_3
+\end{bmatrix} + \beta)$$
+
+A neural network causes most interesting loss functions to become nonconvex.
+This means that neural networks are usually trained by using iterative, gradient-based optimisers that merely drive the cost function to a very low value, rather closed-form linear regression solvers or convex optimisation algorithms with global convergence guarantees used to train logistic regression or SVMs.
+Stochastic gradient descent applied to nonconvex loss functions has no such convergence guarantee and is sensitive to the values of the initial parameters.
+For feedforward neural networks, it is important to initialise all weights to small random values. The biases may be initialised to zero or to small positive values.
+
+\paragraph{Explain the backpropagation algorithm.}
+
+Backpropagation "is an efficient way to compute the gradient
+of an error function w.r.t. the parameters of the model,
+by working with intermediate variables and applying the chain rule".
+It is "a special case of a general technique in numerical analysis
+called automatic differentiation". \citep{deisenroth2020mathematicsforml}
+
+Weights are initialised at random.
+The inputs are forward propagated through the network.
+The loss is calculated by comparing the ouptuts to the targets.
+The error contribution of each neuron is calculated by backpropagation through the layers,
+and the neurons' weights are adjusted proportionally.
+
+\paragraph{What is a momentum term?}
+
+Adding a momentum term,
+$\Delta w_{ij}^l(k+1) = - \eta \delta_{i,p}^l x_{j,p}^{l-1} + \alpha \Delta w_{ij}^l(k)$,
+smoothes the update trajectory.
+
+\paragraph{What is the difference between online, offline learning with backpropagation?}
+
+In online learning the weights are updated after each new pattern.
+
+\noindent In offline learning the weights are updated after a full (mini-)batch.
+
+\paragraph{What is overfitting and early stopping?}
+
+Overfitting is training set memorisation.
+However, what separates machine learning from optimisation is that we want the generalisation error, also called the test error, and defined as the \textit{expected value of the error on a new input}, to be low as well.
+
+The \textit{i.i.d. assumption} enables us to describe the data-generating process with a probability distribution over a single example - which enables us to mathematically study the relationship between training error and test error.
+For some fixed $\bm{w}$, the expected training error is exactly the same as the expected test error, because both expectations are formed using the same dataset sampling process.
+Underfitting occurs when the model is not able to obtain a sufficiently low error on the training set.
+\textit{Overfitting} occurs when the gap between the training error and test error, the \textit{generalisation gap}, is too large.
+
+The training set is used for training.
+The validation set is used for stopping - when the minimal error on the validation set is reached.
+
+\paragraph{Explain Newton learning.}
+
+Newton's method uses the inverse of the Hessian and the gradient to determine the optimal step.
+It converges quadratically, which is much faster than steepest descent.
+
+$$
+\text{Taylor expansion: } f(x) = f(x_0) + J^T \Delta x + \frac{1}{2} \Delta x ^T H \Delta x + \dots,
+\quad \Delta x = x - x_0 \text{ (step) }
+$$
+
+$$
+\text{Optimal step: } \frac{\partial f}{\partial (\Delta x)} = 0
+\quad \Rightarrow \quad
+J + H \Delta x = 0
+\quad \Rightarrow \quad
+\Delta x = - H^{-1} J
+$$
+
+However, computation and inversion of the Hessian, which can be large and dense in high-dimensional problems,
+is more expensive computationally.
+Furthermore, the Hessian often has zero eigenvalues, i.e. it is singular (and therefore cannot be inverted).
+
+Levenberg-Marquardt, quasi-Newton methods can be used to overcome these issues.
+
+\paragraph{Explain Levenberg-Marquardt learning.}
+
+The Levenberg-Marquardt algorithm combines the advantages of the
+Gauss-Newton and steepest decent methods.
+A \textit{damping term} balances the \textit{trade-off between fast convergence and stability}.
+
+Imposing a constraint $\lVert \Delta x \rVert_2 = 1$ gives the Lagrangian
+
+$$
+\mathcal{L}(x, \lambda) = f(x_0) + J^T \Delta x + \frac{1}{2} \Delta x ^T H \Delta x + \frac{1}{2} \lambda ( \Delta x ^T \Delta x - 1 ),
+\quad \Delta x = x - x_0 \text{ (step) }
+$$
+
+$$
+\text{Optimal step: } \frac{\partial \mathcal{L}}{\partial (\Delta x)} = 0
+\quad \Rightarrow \quad
+J + H \Delta x + \lambda \Delta x = 0
+\quad \Rightarrow \quad
+\Delta x = - [H + \lambda I]^{-1} J
+$$
+
+The Hessian (second-order derivatives, scalar-valued functions, describing curvature) are \textit{approximated} with
+the Jacobian (first-order derivatives, vector-valued functions, describing the rate of change in all directions)]of the error function.
+When the approximation is not sufficient, steepest descent is used as a fallback.
+
+$$
+\begin{cases}
+    \lambda = 0 & \text{Newton's method} \\
+    \lambda \gg & \text{Steepest descent}
+\end{cases}
+$$
+
+The step size is based on the local curvature of the error function, allowing
+for faster convergence in regions of small curvature, and more stable updates in regions of large curvature.
+
+\paragraph{Explain quasi-Newton learning.}
+
+The Hessian matrix is approximated rather than computed.
+An example of quasi-Newton methods is the BFGS algorithm.
+
+When the neural network contains many interconnection weights, it becomes hard to store the matrices
+(Hessian and Jacobian) into computer memory. For large scale neural networks, therefore, conjugate
+gradient methods are preferred.
+
+\paragraph{Explain conjugate gradient learning.}
+
+Conjugate gradient methods were developed for large-sale problems,
+for which it was becoming difficult to store the Hessian / Jacobian matrices in memory.
+
+Conjugate gradient methods reduce the number of iterations required to converge
+by maintaining a set of \textit{conjugate search directions} that are
+\textit{orthogonal to each other} and have \textit{no information overlap}.
+
+In each iteration, the method selects a new direction that is a
+linear combination of the conjugate search directions and performs
+a line search to find the minimum along that direction.
+The step size is chosen such that the new direction remains
+conjugate to the previous directions.
+
+\paragraph{What is mini-batch learning?}
+
+Full gradients can be expensive to compute, and may lead to getting
+stuck in worse local minima. Therefore one often estimates the gradient
+on a smaller subset of the training data (a mini-batch).
+
+$$
+w_{t+1} = w_t - \eta \sum_{i \in \mathcal{B}_t}{\frac{\partial l_i}{\partial w}} \Big\rvert_{w = w_t},
+\, \text{where } \mathcal{B}(t) \text{ is a random training data subset at iteration } t
+$$
+
+AdaGrad (adaptive gradient descent) is a stochastic gradient version with
+a learning rate for each parameter.
+
+\paragraph{What is the Adam training algorithm?}
+
+SGD with an additional momentum term $m_t$, and $\beta \in (0, 1)$:
+
+$$
+w_{t+1} = w_t - \eta m_{t+1}, \quad
+m_{t+1} = \beta m_t + (1 - \beta) \sum_{i \in \mathcal{B}_t}{\frac{\partial l_i}{\partial w}} \Big\rvert_{w = w_t}
+$$
+
+Nesterov accelerated momentum
+(instead of at the current point, $w = w_t$)
+computes the gradients at the predicted point, $w = w_t - \eta m_t$:
+
+$$
+w_{t+1} = w_t - \eta m_{t+1}, \quad
+m_{t+1} = \beta m_t + (1 - \beta) \sum_{i \in \mathcal{B}_t}{\frac{\partial l_i}{\partial w}} \Big\rvert_{w = w_t - \eta m_t}
+$$
+
+Adam (Adaptive moment estimation) considers the momentum and
+an elementwise squaring of the gradient of the loss.
+In this way good progress during the training process is obtained in every
+direction in the parameter space. It is usually used with mini-batches.
+
+
+\newpage
+\subsection{Classification and Bayesian Decision Theory}
+
+\paragraph{What are the limitations of a perceptron?}
+
+A perceptron consists of just one neuron with a sign activation function:
+$y = \text{sign}(v^T x + b) = \text{sign}(w^T z)$.
+
+A perceptron can only learn linear decision boundaries.
+Thus it can shatter an AND or OR gate, for example.
+To be able to shatter an exclusive-OR (XOR) gate,
+a nonlinear decision boundary needs to be learned,
+i.e. a MLP with one hidden layer is needed.
+
+\paragraph{What does Cover's theorem tell us about linear separability?}
+
+Consider $N$ input variables in $d$ dimensions.
+Then, if $N < d + 1$, any labelling of points is linearly separable.
+
+For two classes $C_1, C_2$, each possible assignment of all points in the dataset is called a dichotomy.
+For $N$ points, there are $2^N$ possible dichotomies.
+For larger $d$ it becomes likely that more dichotomies are linearly separable.
+
+That is, the fraction of dichotomies that is linearly separable, for the two cases, is given by:
+
+$$
+F(N, d) = \begin{cases}
+    1 & N < d + 1 \\
+    \frac{1}{2^{N-1}} \sum_{i=0}^d{\binom{N-1}{i}} & N \geq d + 1
+\end{cases}
+$$
+
+Let $N = 4, d = 2$.
+Then there are $2^4 = 16$ dichotomies.
+$14$ of them are linearly separable - all except XOR.
+
+Consider a microarray dataset with $d = 10^4, N = 100$ (i.e. large $d$ s.t. $N < d + 1$ and definitely linearly separable),
+and a fraud detection dataset with $d = 10, N = 10^6$ (i.e. large $N$ s.t. $N \geq d + 1$).
+
+Nonlinear separation with MLPs:
+
+\begin{itemize}
+    \item Perceptron: linear separation.
+    \item One hidden layer: realisation of convex regions.
+    \item Two hidden layers: realisation of non-convex regions.
+\end{itemize}
+
+\paragraph{Explain simple linear scaling vs. whitening for preprocessing inputs.}
+
+\paragraph{What is the receiver operating (ROC) curve?}
+
+Goal: max AUC (area under curve).
+Sensitivity = TP / (TP + FN).
+Specificity = TN / (FP + TN).
+FP-Rate = 1 - Specificity = FP / (FP + TN).
+
+\paragraph{How is Bayes' theorem used for classification and decision making?}
+
+Consider a character recognition problem with classes $C_1, C_2$ corresponding to letters 'a' and 'b'.
+
+Assuming that 'a' typically occurs three times as often as 'b',
+the \textit{prior} probabilities $P(C_1) = 0.75, P(C_2) = 0.25$.
+The best classifier would hence be one that always predicts 'a',
+since $P(C_1) > P(C_2)$ and always predicting 'a' therefore minimises the probability of misclassification.
+
+Suppose a feature $x_1$, which takes discrete values $X_l$, is measured.
+The \textit{posterior} probability is given by the class conditional probability times the prior over the normalisation:
+$P(C_k \mid X_l) = \frac{P(X_l \mid C_k) P(C_k)}{P(X_l \mid C_1) P(C_1) + P(X_l \mid C_2) P(C_2) + \dots} ( = \frac{P(C_k, X_l)}{P(X_l)})$.
+
+\textit{Using Bayes' theorem, the probability of misclassification
+can be minimised based on the posterior} $P(C_k \mid X_l)$,
+e.g. assign point to class $C_1$ if $P(C_1 \mid x_1) > P(C_2 \mid x_1)$.
+
+Prior $P(C_k) \, \rightarrow$ observed data $\frac{P(X_l \mid C_k)}{P(X_l)} \, \rightarrow$ posterior $P(C_k \mid X_l)$.
+
+For continuous random variables in the feature space,
+
+$$
+P(C_k \mid x) = \frac{p(x \mid C_k) P(C_k)}{p(x)} = \frac{p(x \mid C_k) P(C_k)}{\sum_{k=1}^c{p(x \mid C_k) P(C_k)}}, \quad k = 1, \dots, c, \, x \in \mathbb{R}^d,
+\quad \sum_{k=1}^c{P(C_k \mid x) = 1}
+$$
+
+$p(x)$ is the unconditional density.
+Class-conditional densities $p(x \mid C_k)$ are obtained, for example, by probability density estimation methods.
+If $p(x \mid C_k)$ has a parametrised form, then it is called a \textit{likelihood} function;
+that is, the posterior is then the likelihood times the prior over the normalisation.
+
+\textit{Selecting the class with maximum posterior probability},
+$k^* = \arg\max_{k = 1, \dots, c}{P(C_k \mid x)}$,
+minimises the probability of misclassification.
+Imagine two bell curves, then:
+
+$$
+P(\text{err.})
+= \int_{\mathcal{R}_2}{p(x \mid C_1) P(C_1) \, dx}
++ \int_{\mathcal{R}_1}{p(x \mid C_2) P(C_2) \, dx}
+\qquad
+P(\text{corr.}) = \sum_{k=1}^c{\int_{\mathcal{R}_k}{p(x \mid C_k) P(C_k) \, dx}}
+$$
+
+Minimizing the probability of misclassification may not be the best
+criterion in some circumstances, e.g. it might be more serious when a
+tumor is classified as normal than a normal image as tumor.
+
+\textit{Risk minimisation}: Define a loss matrix $L$
+where $L_{kj}$ is the penalty associated with assigning a pattern to class $C_j$ when it belongs to $C_k$.
+The expected loss or risk then is $R_k = \sum_{j=1}^c{L_{kj}} \int_{R_j}{ p(x \mid C_k) \, dx }$,
+so that the overall expected loss or risk is $R = \sum_{k=1}^c{ R_k P(C_k) }$.
+Region $R_j$ is chosen if $\sum_{k=1}^c{L_{kj} p(x \mid C_k) P(C_k) } < \sum_{k=1}^c{L_{ki} p(x \mid C_k) P(C_k) } \quad \forall i \neq j$.
+
+\paragraph{What is a discriminant function?}
+
+Surfaces of constant probability, i.e. constant $\Delta^2 = (x - \mu)^T \Sigma^{-1} (x - \mu)$,
+are hyperellipsoids with principal axes $u_i$ given by $\sum{u_i} = \lambda_i u_i$,
+with $u_i, \lambda_i$ eigenvectors and eigenvalues of $\Sigma$.
+If $\Sigma$ is diagonal, then the components $x$ are statistically independent because in that case $p(x) = \prod_{i=1}^d{p(x_i)}$.
+
+Bishop book. Watch lecture again.
+
+\paragraph{How can we use a mixture model network for density estimation?}
+
+Density estimation is concerned with modelling a probability density $p(x)$ given data points $x_n \in \mathbb{R}^d, \, n = 1, \dots, N$;
+difficult in higher dimensions ($d > 10$).
+
+Estimate class-conditional densities $p(x \mid C_k)$ and apply Bayes' Theorem to find the posterior.
+
+There are parametric, non-parametric and semi-parametric approaches.
+Techniques include maximum likelihood and Bayesian inference.
+
+The main appeal of the maximum likelihood estimator is that it can be shown to be the best estimator asymptotically, as the number of examples $m \rightarrow \infty$, the maximum likelihood estimate converges to the true value of the parameter (consistency).
+Relative to maximum likelihood estimation, Bayesian estimation offers two important differences:
+first, unlike the maximum likelihood approach that makes predictions using a point estimate of $\theta$, the Bayesian approach is to make predictions using a full distribution over $\theta$;
+second, the prior in Bayesian inference has an influence by shifting probability mass density towards regions of the parameter space that are preferred a priori (in practice, often a preference for simpler or smoother models).
+Bayesian methods typically generalise much better when limited training data is available but typically suffer from high computational cost when the number of training examples is large.
+Most operations involving the Bayesian posterior for most interesting models are intractable, and a point estiamte (e.g. MAP, PME) offers a tractable approximation which still gains some of the benefit of the Bayesian approach by allowing the prior to influence the choice of the point estimate.
+Note that additional information from the prior in the MAP estimate helps to reduce variance at the price of increased bias (in comparison to the ML estimate).
+
+In maximum likelihood estimation, represent the density $p(x)$ for a dataset $\chi = \{x_1, \dots, x_N\}$
+by means of a parameter vector $\theta = [\theta_1; \dots; \theta_M] \in \mathbb{R}^M$, which gives a parametrised density $p(x \mid \theta)$.
+Assuming the data are drawn independently from $p(x \mid \theta)$, then $p(\chi \mid \theta) = \prod_{n=1}^N{p(x_n \mid \theta)} = \mathcal{L}(\theta)$ gives the likelihood $\mathcal{L}(\theta)$ of $\theta$ for the data $\chi$.
+The maximum likelihood, i.e. the $\theta$ which is most likely to give rise to the observed data, is obtained by means of the minimum negative log likelihood:
+
+$$\min_\theta{E}, \, E = - \log{\mathcal{L}(\theta)} = - \log{\big[ \prod_{n=1}^N{p(x_n \mid \theta)} \big]} = - \sum_{n=1}^N{\log{p(x_n \mid \theta)}}$$
+
+Example of a multivariate normal distribution for $p(x \mid \theta)$ - biased if $N$ is finite, unbiased as $N \rightarrow \infty$.
+
+For mixture models, a reparametrisation by $\gamma_j \in (- \infty, \infty)$ is used to guarantee that $\sum_{j=1}^M{P(j)} = 1, \, 0 \geq P(j) \geq 1$,
+which gives the softmax function: $P(j) = \frac{e^{\gamma_j}}{\sum_{j=1}^M{e^{\gamma_j}}}$
+
+In Bayesian inference, i.e. $p(\theta \mid \chi) = \frac{p(\chi \mid \theta) p(\theta)}{p(\chi)}$,
+for likelihood $p(\chi \mid \theta) = \prod_{n=1}^N{p(x_n \mid \theta)}$,
+the normalisation factor $p(\chi)$ ensures that $\int{p(\theta \mid \chi) \, d\theta} = 1$.
+
+\paragraph{What is Expectation-Maximisation of mixture models?}
+
+The EM algorithm reformulates the cost function in terms of hidden variables.
+
+
+\newpage
+\subsection{Generalisation and Bayesian Learning}
+
+\paragraph{What is a generalisation error and the bias-variance trade-off?}
+
+The bias of an estimator is defined as $\text{bias}(\hat{\bm{\theta}}_m) = \mathbb{E}[\hat{\bm{\theta}}_m] - \bm{\theta}$; an estimator is (asymptotically) unbiased if $\lim_{m \rightarrow \infty}{\mathbb{E}[\hat{\bm{\theta}}_m]} = \bm{\theta}$.
+\textit{Consistency} ensures that the bias induced by the estimator diminishes as the number of data examples grows, e.g. convergence in probability $\text{plim}_{m \rightarrow \infty}{\hat{\bm{\theta}}_m} = \theta$.
+(However, asymptotic unbiasedness does not imply consistency.)
+
+Bias and variance measure two different sources of error in an estimator:
+bias measures the expected deviation from the true value of the function or parameter;
+variance provides a measure of the deviation from the expected estimator value that any particular sampling of the data is likely to cause.
+Evaluating the MSE incorporates both the bias and the variance: $\text{MSE} = \mathbb{E}[(\hat{\theta}_m - \theta)^2] = \text{Bias}(\hat{\theta}_m)^2 + \text{Var}(\hat{\theta}_m)$.
+Estimators with small MSE manage to keep both their bias and variance somewhat in check.
+
+The relationship between bias and variance is tightly linked to the machine learning concepts of capacity, underfitting and overfitting.
+When generalisation error is measured by the MSE (where bias and variance are meaningful components of generalisation error),
+\textit{increasing capacity tends to increase variance and decrease bias}.
+
+The goal of learning is not to memorize data but rather to model the underlying
+generator of the data, characterized by the joint probability density of inputs $x$ and targets $t$,
+$p(x, t) = p(t \mid x) p(x)$.
+
+Consider a data set of infinite size, i.e. $N \rightarrow \infty$, with cost
+
+$$
+E = \lim_{N \rightarrow \infty}{\frac{1}{2N} \sum_{n=1}^N{ \big(y(x_n; w) - t_n\big)^2 }}
+= \frac{1}{2} \iint{ \big(y(x_n; w) - t_n\big)^2 \,  p(t, x) \, dt \, dx }
+$$
+
+At the minimum $w*$ of the error function,
+the output approximates the conditional average of the target data:
+$y(x_n; w) = \int{t \, p(t \mid x) \, dt}$,
+but intrinsic noise puts a harder limit on the achievable error:
+
+$$
+E
+= \frac{1}{2} \int{ \Big( y(x; w) - \int{t \, p(t \mid x) \, dt} \Big)^2 \, p(x) \, dx}
++ \frac{1}{2} \int{ \Big( \int{t^2 \, p(t \mid x) \, dt} - \big( \int{t \, p(t \mid x) \, dt} \big)^2 \Big)^2 \, p(x) \, dx}
+$$
+
+In practice, there is only one finite data set $D$. Consider the expectation over an ensemble of datasets
+
+$$
+\mathbb{E}_D[\big( y(x) - \int{t \, p(t \mid x) \, dt} \big)^2]
+= \big( \mathbb{E}_D[y(x)] - \int{t \, p(t \mid x) \, dt} \big)^2
++ \mathbb{E}_D\Big[ \big( y(x) - \mathbb{E}_D[y(x)]^2 \big)^2 \Big]
+$$
+
+High bias means the model makes strong assumptions and fails to capture important patterns in the data.
+High bias typically leads to underfitting.
+
+High variance means the model is too flexible and learns noise or random fluctuations in the training data.
+High variance typically leads to overfitting.
+
+For example, generate 100 data sets by sampling the true underlying function $f(x)$\footnote{
+    The true underlying function would not be known in the real world.
+} and adding noise. Estimate the mappings $y_i(x)$ for $i = 1, 2, \dots, 100$.
+The average response is $\bar{y}(x) = \frac{1}{100} \sum_{i=1}^{100}{y_i(x)}$.
+The square of the bias is $\sum_n\big( \bar{y}(x_n) - f(x_n) \big)^2$,
+the variance is $\sum_n{ \frac{1}{100} \sum_{i=1}^{100}{ \big( y_i(x_n) - \bar{y}(x_n) \big)^2 } }$.
+
+In the bias-variance trade-off one tries to minimise the sum of $\text{bias}^2 + \text{variance}$!
+
+Typically, in a small model structure (with a small effective number of parameters)
+there is low variance and high bias; while in a large model structure
+(with a large effective number of parameters) there is high variance and small bias.
+
+\paragraph{How can one prevent overfitting?}
+
+Regularisation is any modification we make to a learning algorithm that is intended to reduce its generalisation error but not its training error.
+
+Regularisation, for example with a small value of $\lambda = 10^{-6}$
+for the L2 regularisation term in Ridge regression,
+avoids oscillation in a high-order polynomial.
+(Setting $\lambda$ too high, on the other hand, may result in too much regularisation.)
+
+Early stopping when the minimal error on the validation set is reached.
+
+Data augmentation is easiest for classification.
+It has been a particularly effective technique for a specific classification problem: object recognition.
+Injecting noise in the input to a neural network \citep{SIETSMA199167} can also be seen as a form of data augmentation.
+
+\paragraph{What is the role of a regularisation term (or weight decay term)?}
+
+The regularisation term is a penalty term added to the loss function
+during training, which penalises large parameter values or
+encourages sparsity in the model. This encourages the model to prioritise
+smaller weights (L2) or select only a subset of features (L1), thus
+reducing overfitting and improving generalisation.
+
+Sparsity is the property of having a large number of zero or near-zero
+values in the parameters or features of the model.
+This allows for more efficient and more interpretable models because only
+a subset of features are actively contributing to the model's output.
+
+Consider a regularised problem $\tilde{E} = E + v \Omega(w)$
+with $E$ the original cost function (e.g. MSE),
+$v$ a positive regularisation constant,
+$\Omega(w) = \frac{1}{2} \sum_i{w_i^2}$ the regularisation term
+with unknown weights $w$.
+Suppose $E = 0$. Then $\frac{dw}{d \tau} = - \eta \frac{\partial \tilde{E}}{\partial w} = - \eta v w$
+yielding exponentially \textit{decaying weights} $w(\tau) = w(0) e^{- \eta v \tau}$,
+where $\tau$ is the iteration number.
+
+Weight Elimination: this algorithm is more likely to eliminate weights
+(i.e. setting to zero) than the weight decay method.
+A drawback is the choice of the additional tuning parameter $c$.
+
+\paragraph{What is the effective number of parameters?}
+
+Thanks to regularization one can implicitly work with less parameters
+than the number of unknown interconnection weights.
+The effective number of parameters is $\sum_j{\frac{\lambda_j}{\lambda_j + v}}$.
+
+The number of parameters refers to the total count of weights in a model while the effective number
+of parameters refers to the numbers of parameters that aren't close to zero so they have an actually
+impact on the output. The amount parameters and effective number of parameters might not match
+because regularisation techniques and vanishing gradients.
+
+The effective number of parameters refers to the number of non-zero
+parameters that actively contribute to the model's predictions.
+
+In a sparse model, the effective number of parameters is smaller than the
+total number of parameters in the model because many of the parameters are
+forced to be zero by regularisation.
+
+\paragraph{What is the difference between least squares and ridge regression?
+How is this related to the bias-variance trade-off?}
+
+\textit{Least squares} regression aims to find the line (in the case of linear regression,
+or a hyperplane in the case of multiple linear regression), that minimises
+the sum of the squared differences between the observed and predicted values.
+
+$$
+\min_{\bm{x}}{J_\text{LS}(\bm{x})} = \frac{1}{2} (A\bm{x} - B)^T (A\bm{x} - B),
+\quad A \in \mathbb{R}^{m \times n}, m > n, B \in \mathbb{R}^m, \bm{x} \in \mathbb{R}^n
+$$
+
+$$
+\text{Condition for optimality } \frac{\partial J_\text{LS}}{\partial \bm{x}} = \bm{0}
+\quad \Rightarrow \quad
+A^T A \bm{x} - A^T B = \bm{0}
+$$
+
+$$
+\quad \Rightarrow \quad
+\bm{x}_\text{LS} = (A^T A)^{-1} A^T B = A^\dagger B, \quad A^\dagger = \text{ the pseudoinverse}
+$$
+
+\textit{Ridge} regression adds a regularisation term
+$\lVert \bm{x} \rVert _2^2 = \bm{x}^T \bm{x}$
+to the least squares objective function, known as the L2 regularisation term.
+This penalty shrinks the coefficients towards zero\footnote{
+    Unlike lasso regression, which can force some coefficients to be exactly zero (thus performing variable selection),
+    ridge regression only reduces their magnitude, so all coefficients remain nonzero unless $\lambda$ is infinite.
+}, and thus reduces variance and overfitting.
+
+$$
+\min_{\bm{x}}{J_\text{ridge}(\bm{x})} = \frac{1}{2} e^T e + \frac{1}{2} \lambda \bm{x}^T \bm{x},
+\quad e = (A\bm{x} - B) \text{ s.t. } e^T e \text{ is the squared error}, \, \lambda > 0
+$$
+
+$$
+\text{Condition for optimality } \frac{\partial J_\text{ridge}}{\partial \bm{x}} = \bm{0}
+\quad \Rightarrow \quad
+A^T A \bm{x} + \lambda \bm{x} - A^T B = \bm{0}
+$$
+
+$$
+\quad \Rightarrow \quad
+\bm{x}_\text{ridge} = (A^T A + \lambda I)^{-1} A^T B
+$$
+
+Note this is helpful when $A^TA$ is ill-conditioned.\footnote{
+    An ill-conditioned matrix is a matrix for which
+    small changes or errors in the input data
+    (such as the coefficients or the right-hand side of a system of equations)
+    can cause large changes in the solution.
+    This means that the matrix is highly sensitive to numerical errors,
+    making computations involving it unreliable or unstable.
+    For example, when solving $A\bm{x} = \bm{b}$, if $A$ is ill-conditioned,
+    even a tiny change in $\bm{b}$ or in the entries of $A$ can lead to a large difference in the solution $\bm{x}$.
+    The degree of ill-conditioning is measured by the condition number of the matrix.
+    The condition number is determined by the smallest and largest singular values of the matrix.
+    The more extreme the ratio between the largest and smallest eigenvalues, the more ill-conditioned the matrix is.
+    Ill-conditioning often arises when the matrix has columns (or rows) that are nearly linearly dependent or have vastly different scales
+} When $A^T A$ is ill-inconditioned, its smallest eigenvalues are close to zero,
+making the matrix nearly singular. This causes the OLS solution to be highly sensitive to small changes in the data,
+resulting in large variances and unstable estimates.
+The addition of $\lambda I$ increases all eigenvalues by $\lambda$,
+ensuring none are too close to zero and thus improving the condition number of the matrix.
+
+The L1 norm $\tilde{E} = E + v \sum_i{\lvert w_i \rvert}$
+gives sparsity but non-differentiability of $\lvert w_i \rvert$,
+and is used, for example, in Lasso regression and compressed sensing methods.
+
+The \textit{bias-variance trade-off} is the trade-off between bias and variance as a function of the regularisation term.
+A large penalty decreases variance but leads to a larger bias,
+a small penalty decreases bias but increases variance.
+
+Bias is the inability to capture the true relationship in the data.
+Variance is the difference between the performance on the training
+and test sets. Compare with overfitting!
+
+\paragraph{Explain cross-validation.}
+
+As opposed to always using the same validation set, in (k-fold) cross-validation
+the training set is split into $k$ folds, and each fold is used as the validation set
+for using the other $k-1$ folds to train.
+
+Can prevent overfitting, and metrics will be more conservative (check learning theory).
+
+\begin{itemize}
+    \item In K-fold cross-validation, the original sample is randomly
+    partitioned into K subsamples. Of the K subsamples, a single
+    subsample is retained as the validation data for testing the model,
+    and the remaining K-1 subsamples are used as training data.
+    The cross-validation process is then repeated K times (the folds),
+    with each of the K subsamples used exactly once as the validation
+    data. The K results from the folds then can be averaged (or
+    otherwise combined) to produce a single estimation
+    \item The advantage of this method over repeated random sub-sampling
+    is that all observations are used for both training and validation,
+    and each observation is used for validation exactly once
+    \item Cross-validation gives more conservative validation metrics!?
+    \item leave-one-out cross-validation is the same as a K-fold cross-
+    validation with K being equal to the number of observations in the
+    original sample!
+\end{itemize}
+
+\paragraph{Explain complexity criteria.}
+
+Prediction error (PE) is training error plus complexity.
+
+For linear models, for example the Akaike information criterion,
+$PE = MSE + \frac{W}{N} \sigma^2$ where
+$N$ is the number of training data,
+$W$ is the number of adjustable parameters,
+$\sigma^2$ is the variance of the noise on the data.
+
+For nonlinear models, the generalised prediction error
+$GPE = MSE + \frac{\gamma}{N} \sigma^2$ where
+$\gamma = \sum_i{\frac{\lambda_i}{\lambda_i + v}}$ is the effective number of parameters,
+with $\lambda_i$ the eigenvalues of the Hessian of the unregularised error,
+$v$ the regularisation coefficient.
+(Eigenvalues $\lambda_i \ll v$ do not contribute to the sum.)
+
+\paragraph{What are pruning algorithms?}
+
+In order to improve the generalisation performance of the trained models one can
+remove interconnection weights that are irrelevant.
+
+\noindent Optimal Brain Damage: considers error change due to small changes in weights.
+Has been used to prune networks with 10,000 interconnections by a factor of 4.
+Starting from a relatively large network architecture,
+
+\begin{enumerate}
+    \item Train until a stopping criterion is satisfied, e.g. the error function is minimised.
+    \item Compute the saliency values (measuring relative importance of weights) for all interconnection weights.
+    \item Sort the weights by saliency and delete low-saliency weights.
+    \item Repeat until some stopping criterion is reached.
+\end{enumerate}
+
+\noindent Optimal Brain Surgeon:
+
+\begin{enumerate}
+    \item Train a relatively large network to a minimum of the error function
+    \item Calculate the inverse of the Hessian to determine which weights can be removed without introducing a lot of error
+    \item Remove the weights that give the smallest increase in error error and update the weight matrix (it changes dimension).
+    \item Adjust remaining weights to account for removal of the weights.
+    \item Go to 2 and repeat until some stopping criterion is reached
+\end{enumerate}
+
+OBS has better performance than OBD because OBD completely removes the connection with
+low-saliency from the network while removing the influence of the weight. This helps to maintain
+structural integrity.
+
+\paragraph{What is a committee network (ensemble learning)?}
+
+In the committee network method, also known as ensemble learning or model averaging,
+multiple individual models, called committee members, are trained independently
+on the same task or dataset, using possibly different algorithms or parameter settings,
+and their predictions are combined to obtain the committee network's prediction.
+
+Training many different networks and selecting only the best one (based on a validation set)
+wastes a lot of training effort. Moreover,
+generalisation on the validation set has a random component due to noise on the data.
+The performance of a committee network can be better than the performance of the best single network.
+
+The average sum-of-squares error for a single network is $E_i = \mathbb{E}[(y_i(x) - f(x))^2] = \mathbb{E}[\varepsilon_i^2]$.
+The average error over multiple networks is $E_\text{AVG} = \frac{1}{L} \sum_{i=1}^L{E_i} = \frac{1}{L}\sum_{i=1}^L{\mathbb{E}[\varepsilon_i^2]}$
+For a committee network,
+
+$$
+y_\text{COM}(x) = \frac{1}{L} \sum_{i=1}^L{y_i(x)},
+E_\text{COM} = \mathbb{E}[ \big( \frac{1}{L} \sum_{i=1}^L{(y_i(x) - f(x))^2} \big)^2 ]
+= \mathbb{E}[\big( \frac{1}{L} \sum_{i=1}^L{\varepsilon_i} \big)^2]
+$$
+
+Variance is reduced by averaging over many networks:
+
+$$
+\text{By Cauchy's inequality, }
+\big( \frac{1}{L} \sum_{i=1}^L{\varepsilon_i} \big)^2
+\leq
+\sum_{i=1}^L{\varepsilon_i^2}
+\quad \Rightarrow \quad
+E_\text{COM} \leq E_\text{AVG}
+$$
+
+Ensemble learning can be further improved by using a \textit{weighted average} committee network.
+
+\paragraph{What is a double descent curve?}
+
+The classical U-shaped risk curve arises from the bias-variance trade-off.
+The double-descent risk curve incorporates the U-shaped risk curve (i.e. the classical regime)
+with the observed behaviour from using high-complexity function classes (i.e. the "modern" interpolating regime),
+separated by the interpolation threshold (i.e. the peak in the middle).
+
+The area to the left of the minimum of the classical risk curve represents underfitting,
+the area to the right overfitting.
+
+The area to the left of the double descent peak represents this classical, under-parametrised regime.
+The training risk reaches zero at the interpolation threshold.
+To the right of the interpolation threshold there is the modern over-parametrised interpolating regime.
+Note that under the modern regime the training risk is already and remains at zero.
+
+\paragraph{What is the role of the prior distribution in Bayesian learning of neural networks?}
+
+The prior represents knowledge or assumptions about the model parameters
+\textit{prior} to observing the data. It provides a way of specifying
+beliefs about the likely values of the parameters based on prior experience or domain knowledge.
+
+It can be chosen based on prior beliefs, or can be non-informative and expressing minimal prior knowledge.
+The choice of prior distribution reflects the prior assumptions about the parameters' values and their uncertainty.
+
+Consider a model $H$ given by $y(x; w)$, i.e. parametrised by parameter vector $w$, e.g. the interconnection weights of a MLP.
+The posterior $p(w \mid D)$ is the likelihood times the prior $p(w)$ over the evidence:
+
+$$
+P(w \mid D, H) = \frac{P(D \mid w, H) P(w \mid H)}{P(D \mid H)}
+$$
+
+Taking the log, the log posterior equals the log likelihood + the log prior - the log evidence.
+
+The objective is $min_w{M(w)} = \beta E_D(w) + \alpha E_W(w)$ with
+$E_D(w) = \frac{1}{2} \sum_{n=1}^N{\big( t^{(n)} - y(w^{(n)}; w) \big)^2}$
+and $E_W(w) = \frac{1}{2} \sum_j{w_j^2}$, i.e. keep also the weights small when minimising training error!
+Equivalently, $max_w{- M(w)} = - \beta E_D(w) - \alpha E_W(w)$.
+
+Consider $- M(w)$ as the log posterior,
+$- \beta E_D(w)$ as the log likelihood,
+$- \alpha E_W(w)$ as the log prior. Then, using normalisation factors, one can consider
+$\exp(- M(w) ) / Z_M$ as the posterior,
+$\exp(- \beta E_D(w) ) / Z_D$ as the likelihood,
+$\exp(- \alpha E_W(w) ) / Z_W$ as the prior.
+
+\paragraph{What is Occam's razor principle?}
+
+Occam's razor states that one should not only try to minimise error
+but also keep the model complexity as low as possible:
+"Simple models should be preferred". Bayes Theorem embodies Occam's razor automatically!
+
+Occam's razors says that the simplest explanation should be the one most preferred. For us, this
+would mean that we prefer the simplest model. Simple models tend to make precise predictions.
+Complex models by their nature , are capable of making a greater variety of predictions.
+
+Consider two alternative models $H_1, H_2$ and data $D$. Then
+
+$$
+\frac{P(H_1 \mid D)}{P(H_2 \mid D)} = \frac{P(D \mid H_1)}{P(D \mid H_2)} \frac{P(H_1)}{P(H_2)}
+$$
+
+Suppose $P(H_1) = P(H_2)$ but $H_1$ is a simpler model that makes a more limited range of predictions $P(D \mid H_1)$ over a shorter range $C_1$.
+The more complex model $H_2$ is able to predict a larger variety of data sets, $C_2 > C_1$.
+If the data fall in region $C_1$, the simpler model $H_1$ is more probable because
+in interval $C_1$ the evidence $P(D \mid H_1) > P(D \mid H_2)$ so that
+$\frac{P(H_1 \mid D)}{P(H_2 \mid D)} = \frac{P(D \mid H_1)}{P(D \mid H_2)} > 1$.
+
+\paragraph{What is the difference between parameters and hyper-parameters when training multilayer perceptrons?}
+
+In the context of Bayesian learning (posterior, likelihood, prior, evidence), there are three types of unknowns:
+parameters $w$ (the unknown interconnection weights),
+hyperparameters $\alpha, \beta$ (regularisation constants to be determined),
+the number of hidden units (leading to different models $H_i$).
+That is, there are three levels of inference:
+
+\begin{enumerate}
+    \item params $w$: $\max_w{\text{Post.} = \frac{\text{Likelih.} \times \text{Prior}}{\text{Evidence}}} \equiv P(w \mid D, \alpha, \beta, H) = \frac{P(D \mid w, \alpha, \beta, H) P(w \mid \alpha, \beta, H)}{\mathcolor{blue}{P(D \mid \alpha, \beta, H)}}$
+    \item hyperparams $\alpha, \beta$:  $\max_{\alpha, \beta}{\text{Post.} = \frac{\text{Likelih.} \times \text{Prior}}{\text{Evidence}}} \equiv P(\alpha, \beta \mid D, H) = \frac{\mathcolor{blue}{P(D \mid \alpha, \beta, H)} P(\alpha, \beta \mid H)}{\mathcolor{red}{P(D \mid H)}}$
+    \item model comparison:  $\max_{H_1, H_2, \dots}{\text{Post.} = \frac{\text{Likelih.} \times \text{Prior}}{\text{Evidence}}} \equiv P(H \mid D) = \frac{\mathcolor{red}{P(D \mid H)} P(H)}{P(D)}$
+\end{enumerate}
+
+The prior in level 1 is $P(w \mid \alpha, H) = \exp(- \alpha E_W(w) ) / Z_W \propto \exp(- \alpha \sum_j{w_j^2})$.
+The larger the value for $\alpha$, the more emphasis on making the weights small.
+
+Parameters are the variables of model that are learned from the training data. The values that the
+model adjusts during the training to minimize the loss function. These include weights and biases
+associated with the connections between neurons.
+
+Hyperparameters are the configurations of the neural network that are set before the training beings.
+These are not learned but set by the developer. Hyperparameter include the learning rate, number of
+hidden layers, number of neurons in each layer, etc.
+
+\paragraph{How does one characterise uncertainties on predictions in a Bayesian learning framework?}
+
+Instead of providing a single point estimate, Bayesian methods offer a distribution of predictions,
+called error bars, allowing for a more comprehensive understanding of the uncertainty associated with the model's output.
+
+Bayesian prediction involves marginalisation over the uncertainty at all levels:
+
+$$
+P(t^{(N+1)} \mid D) = \sum_{H_i}{ \int{d\alpha \, d\beta \int{ d^k w P(t^{(N+1)} \mid w, \alpha, \beta, H) P(w, \alpha, \beta, H \mid D) }} }
+$$
+
+Assuming fixed values $\alpha, \beta$ and a local linearisation of the output,
+one has a predictive distribution with mean $y(x^{(N+1)}; w_\text{MP})$ and variance $\sigma^2_{t \mid \alpha, \beta} = J^T A^{-1} J + \frac{1}{\beta}$.
+
+\paragraph{What is the purpose of automatic relevance determination? What is the role of the hyper-parameters?}
+
+\begin{itemize}
+    \item Input selection: Which are the most relevant inputs in order to explain
+    the data with respect to the considered model?
+
+    \item Different models can lead to different conclusions about relevance
+    of inputs: Note that the obtained relevance is not valid in an absolute
+    sense, but only relative with respect to the considered model.
+
+    \item A choice of $C$ for automatic relevance determination:
+
+    $$C(x, z) = \theta_1 \exp\Bigg( - \frac{1}{2} \sum_{i=1}^n{\frac{(x_i - z_i)^2}{\sigma_i^2}} \Bigg) + \theta_2$$
+
+    where $x, z \in \mathbb{R}^n$ and $x_i, z_i$ denote the $i$-th component of these vectors,
+    $\theta_1, \theta_2$ are constants.
+\end{itemize}
+
+Interpretation: $\sigma_i$ large: irrelevant to the model; $\sigma_i$ small: $i$-th input is relevant for the considered model.
+
+With support vector machines, an RBF kernel can be used to determine the relevance of inputs:
+
+$$
+K(x, z) = \exp{\big( - (x - z)^T S^{-1} (x - z) \big)}
+$$
+
+where $S = \text{diag}([s_1^2; \dots; s_n^2])$.
+Small values of $1 / s_i^2$ indicate that the corresponding input is not very relevant in the chosen model.
+
+
+\newpage
+\subsection{Time Series Prediction, Nonlinear Modelling and Control}
+
+\paragraph{How can a multilayer perceptron be used for time series prediction?}
+
+A multilayer perceptron can be used if we prepare the data correctly. We organise the time series
+data into input-output pairs where the input is a sequence of past observations and the output is the
+predicted value for the next time step. We use these input-output pairs to train the MLP.
+
+\vspace{-10pt}
+
+$$
+\hat{y}_{k+1} = f(y_k, y_{k-1}, \dots, y_{k-p})
+= w^T \tanh(V y_{k \mid k-p} + \beta), \text{ where }
+y_{k \mid k-p} = \begin{bmatrix}
+    y_k, y_{k-1}, \dots, y_{k-p}
+\end{bmatrix}^T
+$$
+
+\vspace{10pt}
+
+Training as a feedforward network (e.g. by backpropagation)
+with training error to be minimised:
+$\min_{w, V, \beta}{\frac{1}{2N} \sum_{k=p+1}^{p+N}{(y_{k+1} - \hat{y}_{k+1})^2}}$
+where $y_k = \hat{y}_k + e_k$.
+
+Model selection considerations (for which a validation set or k-fold CV can be used):
+
+\begin{itemize}
+    \item the number of lags $p$
+    \item the number of hidden nodes in the hidden layer $V$
+    \item the choice of regularisation constant (in case weight decay term used in objective)
+\end{itemize}
+
+Although you can use an MLP for time series prediction, it can be challenging. They are limited by their inability to
+retain memory of past inputs. This can lead to difficulties in accurately predicting future values. If the
+multilayer perceptron is recurrent neural network, we also have the problem of the vanishing
+gradient.
+
+\paragraph{How can one use neural networks in different model structures for system identification?}
+
+We can use neural networks in system identifications like time series by training on the input and
+output data and letting the neural net find out how the output is correlated to the input data. Doing
+this should allow one to discover the working of the system and predict outputs.
+
+\begin{enumerate}
+    \item System characterisation: definition of inputs, outputs, states.
+    \begin{itemize}
+        \item White box models: model equations obtained by applying physical laws, parameters have a physical meaning.
+        \item Black box models: predictive model able to establish the relation between inputs and outputs of the system, estimated parameters do not have any physical meaning.
+        \item Grey box models: aspects of both.
+    \end{itemize}
+    \item Choice of a model structure:
+    \begin{itemize}
+        \item Linear time-invariant I/O model structures: ARX, ARMAX, OE, Box-Jenkins.
+        \item Non-linear I/O model structures: NARX, NARMAX, NOE.
+        \item Deterministic state space models: linear, nonlinear.
+        \item Stochastic state space models: linear, nonlinear.
+    \end{itemize}
+    \item Parametrisation of the model: represent model in unknown parameters.
+    \begin{itemize}
+        \item Parametrisations by neural nets: I/O (MLP, RBF), state space (MLP) models.
+    \end{itemize}
+\end{enumerate}
+
+\paragraph{Explain the use of dynamic backpropagation.}
+
+Dynamic backpropagation is a modification of the standard backpropagation algorithm used in feedforward networks,
+which takes into account the time dependency of the data in recurrent networks.
+
+Computation of the gradient of a cost function defined on a recurrent
+network is more complicated. It involves a sensitivity model, which is
+another dynamical system derived from the model.
+
+Another approach is Werbos' backpropagation through time.
+
+\paragraph{What is an LSTM neural network?}
+
+LSTMs consist of units with input, output and forget gates.
+$W, U$ are the interconnection matrices, $b$ the bias terms,
+$d$ is the number of inputs, $h$ the number of hidden units,
+$\circ$ is the elementwise product.
+
+$$
+\begin{cases}
+    f_t & = \text{sigmoid}(W_f x_t + U_f h_{t-1} + b_f) \\
+    i_t & = \text{sigmoid}(W_i x_t + U_i h_{t-1} + b_i) \\
+    o_t & = \text{sigmoid}(W_o x_t + U_o h_{t-1} + b_o) \\
+    c_t & = f_t \circ c_{t-1} + i_t \circ \tanh( W_c x_t + U_c h_{t-1} + b_c ) \\
+    h_t & = o_t \circ \tanh(c_t) \\
+\end{cases}
+$$
+
+LSTMs address the vanishing gradient problem.
+
+\paragraph{Explain the use of neural networks for control applications.}
+
+A control system is a mechanism that manages, commands, directs, or regulates the behavior of other devices or systems using control loops. It operates by comparing the current state or output of a system (the process variable, PV) to a desired state (the setpoint, SP). The system then applies a control action-often through feedback-to minimize the difference (error) between the actual and desired values, thereby achieving the intended behavior or performance.
+
+There are two main types of control systems:
+
+\begin{itemize}
+    \item Open-loop control: The control action is independent of the output (no feedback).
+    \item Closed-loop control (feedback control): The control action depends on the output,
+    using feedback to reduce the error and stabilize the system
+\end{itemize}
+
+Neural networks can be used in control applications with 3 different approaches:
+
+\begin{itemize}
+    \item Behaviour cloning: a form of imitation learning where an agent learns to perform a task by observing and mimicking the actions of an expert. This is typically achieved by collecting a dataset of input-output pairs, where the input is the state or observation (such as images from a car's camera) and the output is the expert's action (such as steering angle or acceleration). The agent then uses supervised learning to train a model that maps inputs to outputs, effectively "cloning" the expert's behaviour (e.g. learning to drive a car)
+    \item Model-based control of a system: first estimate a (neural network) model and then design a
+    neural controller based on the estimated model (e.g. backpropagation through the network).
+    \item Model-free control: For Example, reinforcement learning methods - In this approach, the neural network is used to learn a control
+    policy through interactions with the environment. The neural network acts as the policy
+    network or value function approximator in reinforcement learning algorithms. The system is
+    controlled based on feedback and rewards obtained from the environment, allowing the
+    neural network to learn optimal control strategies. An example could be training a neural
+    network to control a robot arm to perform a specific task without explicitly modeling the
+    dynamics of the system.
+\end{itemize}
+
+Consider a system defined by $x_0, x_{k+1} = f(x_k, u_k)$
+with control constraints $u_k \in U$ and objective
+$\max{J = \psi(x_N) + \sum_{k=0}^{N-1}{l(x_k, u_k)}}$ for fixed $N$ and with $l$ a positive real-valued function.
+
+Dynamic programming derives the optimal solution from the optimal return function
+$V(x, k) : \, V(x_N, N) = \psi(x_N), V(x, k) = \max_{u \in U}\big( l(x, u) + V \big( f(x, u), k + 1 \big) \big)$
+
+Q-Learning is an incremental approximation to dynamic programming.
+The objective is to find a control rule that maximises at each step
+the expected discounted sum of future reward in a finite-state, finite-action MDP.
+Estimate a real-valued function $Q(x, a)$ of state $x$, action $a$,
+which is the expected discounted sum of future reward for
+performing an action $a$ in state $x$ and performing optimally thereafter:
+
+$$
+Q(x, a) = \mathbb{E}[r_k + \gamma \max_b{ Q(x_{k+1}, b) } \mid x_k = x, a_k = a]
+$$
+
+In Deep Q-Learning (DQN; Mnih et al., 2015 Atari paper),
+$Q(x, a; \theta)$ is parametrised by a vector $\theta$
+of a neural network to learn the function.
+
+
+\newpage
+\subsection{Associative Memories}
+
+Feedforward neural networks are static systems.
+Recurrent neural networks are dynamical systems with feedback connections.
+
+A dynamical system is a mathematical model in which a function describes how the state of a system evolves over time within a given space. At any moment, the system has a state (often represented as a point in a state or phase space), and the evolution rule (usually a set of equations) determines how the state changes as time progresses. The evolution can be deterministic (future states are uniquely determined by the current state) or stochastic (randomness influences the evolution).
+Formally, a dynamical system is often defined as a tuple $(T, X, \Phi)$, where:
+$T$ is the set representing time (e.g., real numbers for continuous time, integers for discrete time),
+$X$ is the state space,
+$\Phi$ is the evolution function that describes how the state changes with time.
+
+\begin{itemize}
+    \item continuous-time dynamical system: $\frac{dx(t)}{dt} = f(x(t))$ with initial condition $x(0) = c$ for state vector $x \in \mathbb{R}^n$.
+    \item discrete-time dynamical system: $x_{k+1} = f(x_k), \, x_0 = c$ where $k$ is a discrete time index.
+\end{itemize}
+
+In nonlinear systems there may be multiple or a single unique equilibrium point.
+Equilibrium points may be locally stable or unstable.
+
+\begin{itemize}
+    \item continuous-time equilibrium points $x*$ satisfy $\frac{dx}{dt} = 0$ or $f(x*) = 0$.
+    \item discrete-time equilibrium points $x*$ satisfy $x* = f(x*)$.
+\end{itemize}
+
+\paragraph{What is the working principle of associative memories from a dynamical systems point of view?}
+
+Associative memory stores recognised patterns as equilibrium points of the system.
+
+When the network is trained, it creates a valley in a virtual energy landscape for every saved pattern.
+It does this by changing the weights between connections so that when it is in such a pattern, the energy function is at its lowest.
+
+When the trained network is fed with a partial or noisy pattern,
+it can retrieve the stored pattern by self-organising to the closest learned pattern.
+Like when dropping a ball down a slope, the ball rolls until it reaches a place where it is surrounded by uphills.
+In the same way, the network makes its way towards lower energy and finds the closest saved pattern.
+
+\paragraph{What is the Hebb rule for storing patterns in associative memories and why does it work?}
+
+The Hebbian learning rule is based on the idea that "neurons that fire together, wire together". The
+rule states that the weight between two neurons should be increased if both neurons are active at the
+same time and decreased if one neuron is active while the other is not. The Hebbian rule provides a
+mechanism for modifying synaptic strengths based on the co-activation of neurons. It works by
+strengthening the connections between neurons that consistently fire together, facilitating associative
+memory storage and retrieval.
+
+\paragraph{What determines the storage capacity in associative memories?}
+
+The storage capacity is limited by the ability to retrieve stored information without errors and the
+potential interference between stored patterns. The ability to retrieve the information without errors
+is dependent on the amount of neurons:
+
+$$p_\text{max} = \frac{N}{4 \log{N}}$$
+
+The more neurons, the more patterns can be stored without errors.
+
+\paragraph{When solving the TSP problem using a Hopfield network, how are cities and a tour being represented?}
+
+To solve TSP using a Hopfield network, we first need to define the energy function. In the case of TSP,
+the energy function is defined as the sum of the distances between adjacent cities along the route,
+where the route must visit every city exactly once. When this sum is lowest, so the energy function as
+well, we have found the shortest distances.
+
+\paragraph{What are the main differences between modern Hopfield networks and classical Hopfiled networks?
+How does it update patterns?
+Does it use the synchronous update rule or the asynchronous one?}
+
+Classical Hopfield networks use Hebbian learning through a sum of outer products of the $N$ binary patterns, and the weight matrix then stores the patterns, which can be retrieved.
+
+Modern Hopfield networks use an energy function (e.g. polynomial with storage capacity $C \approxeq \alpha_a d^{a-1}$, exponential with storage capacity $C \approxeq 2^{d / 2}$)
+
+Compared to the traditional Hopfield Networks, the increased storage
+capacity now allows pulling apart close patterns.
+We are now able to distinguish (strongly) correlated patterns, and can
+retrieve one specific pattern out of many.
+\citep{demircigil2017mhn,krotov2016denseassociativememorypattern}
+
+\paragraph{How is the discrete modern Hopfield network generalized to the continuous one?
+How does it update patterns?
+Does it use the synchronous update rule or the asynchronous one?}
+
+It can be shown that the energy function generalises to the attention formula.
+Such a Hopfield layer for deep learning can be used for pattern retrieval tasks.
+\citep{ramsauer2021hopfieldnetworksneed}
+
+\paragraph{Explain the connection between the continuous modern Hopfield network and the attention mechanism.}
+
+
+\newpage
+\subsection{Vector Quantisation, Self-Organising Maps, Regularisation}
+
+\paragraph{What is the aim of vector quantisation?}
+
+The aim of vector quantisation is to compress or represent a set of continuous-valued vectors
+using a smaller set of discrete-valued vectors, known as prototype vectors.
+The goal is to approximate the original data while
+reducing the amount of information required to represent it.
+
+It achieves this by partitioning the input vector space into regions and
+assigning a representative prototype vector to each region.
+The selected prototype vectors should capture the essential characteristics of the input vectors.
+Vector quantisation introduces some level of error in the reconstructed data due to the approximation process.
+The aim is to control this error and strike a balance between compression and reconstruction quality.
+
+Competitive learning (or stochastic approximation) VQ algorithm:
+Consider data $x(k)$ for $k = 1, 2, \dots$ and initial centres $c_j(0)$ for $j = 1, 2, \dots, s$ centres (or prototypes).
+
+\begin{enumerate}
+    \item Determine the nearest centre $c_j(k)$ to data point $x(k)$,
+    e.g. squared error loss $J = \arg\min_l{\lVert x(k) - c_l(k) \rVert}$,
+    called a \textbf{competition} between centres.
+    \item \textbf{Update} the centre: $c_j(k + 1) = c_j(k) + \gamma(k) \big( x(k) - c_j(k) \big), \, k := k + 1$
+    where $\gamma(k)$ meets the conditions for stochastic approximation.
+\end{enumerate}
+
+Note: The process of building the codebook in vector quantization is essentially the same as running k-means: the centroids found by k-means become the codebook vectors in VQ.
+Assigning each data point to the nearest centroid (in k-means) is the same as quantizing a vector to its closest codebook entry (in VQ).
+In both cases, the objective is to minimize distortion (the average squared distance between data points and their representatives).
+
+The algorithm minimises a distortion measure.
+The partition regions of a vector quantiser are non-overlapping and cover the entire input space $\mathbb{R}^n$.
+The optimal vector quantiser is the Voronoi partition.
+
+\paragraph{How is vector quantisation related to self-organising maps?}
+
+Self-organising maps, also known as Kohonen maps,
+
+\begin{itemize}
+    \item try to represent the underlying density of the input by means of prototype vectors (similar to VQ).
+    \item project the higher dimensional input data to a map of neurons (also called nodes or units) such that the data can be visualised, typically a projection to a 2-dimensional grid of neurons.
+\end{itemize}
+
+In this way the SOM compresses information while preserving the most
+important topological and metric relationships of the primary data items on
+the display.
+
+Neurons in fact have two positions: the prototypes $c_j$ in input space $\mathbb{R}^n$, and
+the map coordinates $z_j$ in output space $\mathbb{R}^2$.
+For the grid, often a hexagonal grid is chosen, and also rectangular grids are an option.
+
+SOM, like VQ, use competitive learning:
+
+\begin{enumerate}
+    \item At time $k$, determine the winning unit (also called the best matching unit).
+    \item Update all units.
+    \item Decrease the learning rate $\beta(k)$ and width $\sigma(k)$.
+\end{enumerate}
+
+\paragraph{How are RBF networks related to regularisation theory?}
+
+\paragraph{How can unsupervised learning be helpful for training RBF networks?}
+
+\paragraph{What are fuzzy models?}
+
+The Gaussian RBF function can also be used in fuzzy models as a membership function.
+
+In fuzzy modelling, one works with "vague statements" such as "It is cold"
+instead of a crisp statement like "The temperature is 7 degrees".
+
+The membership function expresses the uncertainty that one has about facts.
+Classically, uncertainty is often expressed in terms of probability.
+Probabilities and membership grades are not the same.
+Fuzzy logic is the theory of how to compute with such vague statements, instead of with the usual binary 0/1 logic.
+For example: "If the heating power is high, then the temperature will increase fast".
+
+For control applications it has the desirable property that models and
+control strategies can be understood and translated into words such that
+human operators can understand what it's doing and, moreover, that
+human knowledge can be incorporated within these systems.
+
+
+\newpage
+\subsection{Support Vector Machines and Kernel-Based Models}
+
+Assume that data for two classes were each sampled from a Gaussian distribution,
+and both distributions have equal covariance matrices, i.e. $C_1 = C_2 = C$.
+This implies that only their means are different.
+
+LDA: A new point $x$ belongs to the first class if $P(C_1 \mid x) > P(C_2 \mid x)$.
+The equation $P(C_1 \mid x) = P(C_2 \mid x)$ describes all points on the boundary
+between the two classes.
+
+By Bayes' Theorem,
+
+$$
+P(C_1 \mid x) = \frac{P(C_1) P(x \mid C_1)}{P(C_1) P(x \mid C_1) + P(C_2) P(x \mid C_2)}
+$$
+
+Assuming equal probability of selecting each class, i.e. $P(C_1) = P(C_2)$, it follows
+from the equation $P(C_1 \mid x) = P(C_2 \mid x)$ that $P(x \mid C_1) = P(x \mid C_2)$. Thus,
+
+\begin{align*}
+    \frac{1}{2 \pi \sqrt{\det{C}}} d^{-\frac{1}{2} (x - m_1)^T C^{-1} (x - m_1)}
+    & = \frac{1}{2 \pi \sqrt{\det{C}}} d^{-\frac{1}{2} (x - m_2)^T C^{-1} (x - m_2)} \\
+    - \frac{1}{2} (x - m_1)^T C^{-1}(x - m_1) & = - \frac{1}{2} (x - m_2)^T C^{-1}(x - m_2) \\
+    (m_2 - m_1)^T C^{-1} x - \frac{1}{2} (m_2 & - m_1)^T C^{-1} (m_2 + m_1) = 0 \\
+    w^T x + b & = 0
+\end{align*}
+
+Separating hyperplane with $w = (m_2 - m_1)^T C^{-1}$,
+$b = - \frac{1}{2} (m_2 - m_1)^T C^{-1} (m_2 + m_1)$.
+
+The Linear Discriminant Function: $g(x) = \bm{w}^T \bm{x} + b$, defines a hyper-plane in the feature space.
+
+The unit-length normal vector of the hyper-plane is: $\bm{n} = \frac{\bm{w}}{\lVert \bm{w} \rVert}$.
+
+How to minimise the classification error rate? Large Margin Classifier:
+The linear discriminant function (classifier) with the maximum margin is the best.
+
+Why is it best? Robust to outliers and, thus, strong generalisation ability.
+
+Margin is defined as the width that the boundary could be increased with before hitting a data point.
+The support vectors are on the margin.
+
+Given a set of data points $\{ (\bm{x}_i, y_i) \}, i = 1, 2, \dots, n$ where
+
+\begin{itemize}
+    \item for $y_i = +1$, $\bm{w}^T \bm{x}_i + b > 0$
+    \item for $y_i = -1$, $\bm{w}^T \bm{x}_i + b < 0$
+\end{itemize}
+
+With a scale transformation on both $w$ and $b$, the above is equivalent to:
+
+\begin{itemize}
+    \item for $y_i = +1$, $\bm{w}^T \bm{x}_i + b \geq 1$
+    \item for $y_i = -1$, $\bm{w}^T \bm{x}_i + b \leq -1$
+\end{itemize}
+
+That is,
+
+\begin{itemize}
+    \item The line through the positive support vector: $\bm{w}^T \bm{x}^+ + b = 1$
+    \item The line through the middle: $\bm{w}^T \bm{x}^+ + b = 1$
+    \item The line through the negative support vector: $\bm{w}^T \bm{x}^- + b = -1$
+\end{itemize}
+
+The margin width is:
+
+\begin{align*}
+    M & = (\bm{x}^+ - \bm{x}^-) \cdot \bm{n} \\
+    & = (\bm{x}^+ - \bm{x}^-) \cdot \frac{\bm{w}}{\lVert \bm{w} \rVert} \\
+    & = \frac{2}{\lVert \bm{w} \rVert} \\
+\end{align*}
+
+\paragraph{What are advantages of support vector machines in comparison with classical multilayer perceptrons?}
+
+SVM's are more easily interpreted than classical multiplayer perceptron's. they also maximize the
+distance between classes. SVM's are also more computational efficient, and less effected by outliers.
+SVMs also don't have the problem of ending up in local minima solutions like MLP's do.
+Some of the advantages:
+
+\begin{itemize}
+    \item Effective in high-dimension space, by using support vectors they can avoid the curse of
+    dimensionality.
+    \item Kernel trick for Nonlinear data
+    \item Guarantees global optimum solutions
+    \item Computationally efficient and less affected by outliers.
+\end{itemize}
+
+\paragraph{What is the kernel trick in support vector machines?}
+
+The kernel trick is used to transform data that isn't linearly separable to another dimension so we can
+separate it without actually calculating the features vectors in that dimension, thus making it more
+computational efficient.
+
+\paragraph{What is a support vector?}
+
+A support vector is a data point that captures the essential information needed to discriminate
+between different classes. They provide the information for constructing an optimal decision
+boundary and determining the boundaries for new data points. SVM's try to maximize the distance
+between 2 differently classified points to get accurate predictions. These vectors then get stored and
+used to make predictions about the test data. By using support vectors, which are a subset of the
+training data, we can computationally efficiently deal with high-dimension datasets.
+
+\paragraph{What is a primal and a dual problem in support vector machines?}
+
+SVM's can be defined in two ways, one is the primal form and the other one is the dual form. The dual
+form is an alternative formulation of the SVM optimisation. It involves transforming the primal
+problem into a constrained optimisation problem, expressed in terms of Langrange multipliers. The
+primal form optimises the objective function subject to a set of constraints while the the dual form
+create a Langrangian function that combines the objective function and the constraints. The primal
+form is preferred when we don't need to apply the kernel trick to the data, the dataset is large but the
+dimension of each data point is small. Dual form is preferred when data has a huge dimension and
+we need to apply the kernel trick.
+
+
+\newpage
+\subsection{Nonlinear PCA and (Stacked) Autoencoders}
+
+\paragraph{What is nonlinear PCA? What is an encoder and a decoder?}
+
+Aim of PCA: decrease dimensionality by mapping vectors $x \in \mathbb{R}^n$ to $z \in \mathbb{R}^m$ with $m < n$.
+
+When using Principal component analysis (PCA) we calculate the covariance matrix of all the data,
+then calculate the eigenvalues and eigenvectors. Afterwards we project the data on the most
+important eigenvectors (the ones with the highest eigenvalues as these hold the most information).
+By doing this projection we essentially project the data in a lower dimension which we can feed to for
+example neural networks to learn from in a less computational expensive way.
+In nonlinear PCA we use kernel functions for mapping to higher dimension, which is useful for data
+points who can not be described with linear function like circles.
+
+Given data $\{ x_i \}_{i=1}^N, \, x_i \in \mathbb{R}^n$ with assumed zero mean and ellipsoidal shape,
+potentially in a high-dimensional input space,
+find projected variables $w^T x_i$ with \textit{maximal variance}:
+
+$$
+\max_w{\mathbb{E}[(w^T x)^2]} = w^T \mathbb{E}[x x^T] w = w^T C w
+$$
+
+where $C = \mathbb{E}[x x^T]$ is the covariance matrix. For $N$ data points,
+
+$$
+C \approx \frac{1}{N} \sum_{i=1}^N{x_i x_i^T}
+$$
+
+Problem: the optimal solution for $w$ is unbounded.
+A common choice for an additional constraint therefore is to impose $w^T w = 1$.
+The problem formulation then becomes:
+
+$$
+\max_w{w^T C w} \text{ subject to } w^T w = 1
+$$
+
+This is a constrained optimisation problem solved by taking the Lagrangian
+$\mathcal{L}(w; \lambda) = \frac{1}{2} w^T C w - \lambda (w^T w - 1)$ with Lagrange multiplier $\lambda$.
+Its solution is given by the eigenvalue decomposition $Cw = \lambda w$
+with $C = C^T \geq 0$, obtained from setting $\partial \mathcal{L} / \partial w = 0, \, \partial \mathcal{L} / \partial \lambda = 0$.
+
+\begin{itemize}
+    \item The eigenvalues $\lambda_i$ are real and positive.
+    \item The eigenvectors $u_1, u_2$ are orthogonal with respect to each other.
+    \item The maximal variance solution is the direction $u_1$ corresponding to $\lambda_\text{max} = \lambda_1$.
+    \item Important: $\mu = 0$ (data should be centered beforehand).
+    \item A point $x$ is mapped to $z$ in the lower-dimensional space by $z_j = u_j^T x$ where $u_j$ are the eigenvectors corresponding to the $m$ largest eigenvalues and $z = [z_1 \, z_2 \dots z_m]^T$.
+    \item The error resulting from the dimensionality reduction is characterised by the neglected eigenvalues, i.e. $\sum_{i=m+1}^n{\lambda_i}$.
+\end{itemize}
+
+When is it a good choice? For example, when the two largest eigenvalues are much larger than the others,
+reducing the original space to a two-dimensional space makes sense.
+(Dimensionality reduction to one dimension would give a projection of the data onto vector $u_1$
+which would remove all ability to discriminate between the two classes.)
+
+The reconstruction problem: The point of PCA is projecting the data to a lower dimension. By doing this we don't use all of the
+eigenvectors which causes us to lose some information, as the original matrix cannot be fully
+recovered. This is a trade off we take and in exchange we can use the used eigenvectors as features
+which are less computationally expensive.
+
+Consider dimensionality reduction with $x \in \mathbb{R}^n, z \in \mathbb{R}^m, m \ll n$.
+
+\begin{itemize}
+    \item $z = G(x)$ is the encoder mapping, $\tilde{x} = F(z)$ is the decoder mapping.
+    \item The objective is the squared distortion error (reconstruction error):
+          $$\min{E} = \frac{1}{N} \sum_{i=1}^N{\lVert x_i - \tilde{x}_i \rVert_2^2} = \frac{1}{N} \sum_{i=1}^N{\lVert x_i - F(G(x_i)) \rVert_2^2}$$
+          \item Information bottleneck: $x \rightarrow G(x) \rightarrow z \rightarrow F(z) \rightarrow \tilde{x}$
+          \item (Linear PCA: linear mappings $F, G$; nolinearlinear PCA: nonlinear mappings $F, G$, e.g. parametrised by MLPs, and learn the interconnection matrices of MLP1 and MLP2 by minimising the reconstruction error.)
+\end{itemize}
+
+\paragraph{What is Oja's rule for a linear neuron in PCA analysis?}
+
+Oja's learning rule is an unsupervised learning algorithm
+for dimensionality reduction or feature extraction based on the Hebbian learning principle.
+
+It iteratively adapts the weights of the neural network to learn to represent the
+directions of maximum variance in the dataset, the principal components.
+It can be seen as a neural network-based approach to compute the principal components
+(while PCA calculates them using matrix operations).
+
+Consider a linear neuron with output $y$ and inputs $\xi_j$: $y = \sum_j{w_j \xi_j} = w^T \xi$.
+Assuming time dependency, i.e. $y(t) = w(t)^T \xi(t)$, Oja's learning rule states:
+
+$$
+w(t+1) = w(t) + \eta y(t) \big( \xi(t) - y(t) w(t) \big)
+$$
+
+Averaging over time $t$:
+
+\begin{align*}
+    \mathbb{E}[w(t+1) - w(t)] & = \mathbb{E}[ \eta y(t) \big( \xi(t) - y(t) w(t) \big) ] \\
+    & = \mathbb{E}[ \eta w(t)^T \xi(t) \big( \xi(t) - w(t)^T \xi(t) w(t) \big) ], \qquad y(t) = w(t)^T \xi(t) \\
+\end{align*}
+
+Oja's rule is susceptible to getting trapped in local optima.
+
+\paragraph{What is a reconstruction error for an autoencoder?}
+
+Autoencoder: unsupervised (i.e. unlabelled training examples) learning algorithm with target values equal to inputs:
+$y^{(i)} = x^{(i)} \in \mathbb{R}^n, i = 1, 2, \dots$.
+
+Key point: limiting the numer of hidden units, i.e. imposing a \textit{sparsity} constraint.
+
+$$
+\min{\lVert \text{input} - \text{decoder}(\text{code}) \rVert^2 + \text{sparsity}(\text{code})}
+$$
+
+Aim: learning a \textit{compressed representation} of the input (similar to a PCA reconstruction problem).
+
+\paragraph{Explain the pre-training and fine-tuning steps when combining an autoencoder with a classifier.}
+
+During the pre-training we train autoencoders to condense the data/learn important features, this is
+done unsupervised. When starting to fine-tune we append a classifier and add the training data
+assignments to use the features learned from the autoencoders to predict the classification of test
+data.
+
+\begin{enumerate}
+    \item Pre-training: train a sparse autoencoder on the unlabelled data.
+    \item Fine-tuning: append a classifier which uses the features $a$ learned by the autoencoder's hidden layer as inputs, and fine-tune the overall classifier by further supervised learning.
+\end{enumerate}
+
+\paragraph{Give motivations for considering the use of more hidden layers in multilayer feedforward neural networks.}
+
+Neural networks with one hidden layer are universal approximators but we can't say how many
+neurons may be needed in that hidden layer. For example: One hidden layer and $n$ inputs may require
+$2^n$ hidden units which is a very large number. But if we add more hidden layers the amount of
+neurons needed may be more moderate. So not exponential but rather polynomial. These extra
+layers will allow the neural network to capture the underlying features and thus work out more
+complex tasks.
+
+Deep network: multiple hidden layers to determine more complex features of the input.
+Important to use a nonlinear activation function (multiple layers of linear functions would compute only a linear function of the input).
+
+\begin{itemize}
+    \item Compactly represent a significantly larger set of functions
+    \item There are functions which a k-layer network can represent compactly
+        (with a number of hidden units that is polynomial in the number of
+        inputs), that a (k-1)-layer network cannot represent, unless it has an
+        exponentially large number of hidden units.
+    \item One can learn part-whole decompositions (feature hierarchies): e.g.
+        layer 1: learn to group pixels in an image to detect edges,
+        layer 2: group together edges to detect longer contours,
+        (detect simple parts of objects),
+        layer 3,4,...: group together contours or detect complex features
+    \item Cortical computations in the brain also have multiple layers of processing:
+        cortical area V1,
+        cortical area V2
+\end{itemize}
+
+\paragraph{What are possible difficulties for training deep networks?}
+
+Some of the most known ones are overfitting, vanishing/exploding gradients, and computational difficulties.
+
+Further they also get less interpretable and explainable making them more and more of a black box model.
+
+Supervised learning using labeled data by applying gradient descent (e.g.
+backpropagation) on deep networks usually does not work well. Too
+many bad local minima occur.
+
+Gradients becoming very small in deep networks for randomly initialized
+weights. When using backpropagation to compute the derivatives, the
+gradients that are backpropagated rapidly decrease in magnitude as the
+depth of the network increases (called diffusion of gradient problem).
+
+Greedy layer-wise training works better.
+
+\paragraph{Explain stacked autoencoders.}
+
+An autoencoder is a type of neural network that is trained (unsupervised) to reproduce its input data
+as its output. It consists of two parts: an encoder and a decoder. The encoder transforms the input
+data into a compressed representation, with typically a lower dimensionality than the input. So it can
+be more efficiently used. The decoder attempts to reconstruct the original data from the compressed
+representation.
+
+Stacked autoencoders: greedy layer-wise training
+
+Stacked autoencoders are several autoencoders stacked on top of each other. The first autoencoder
+learns the primary features of the data. These primary features are then given to the next
+autoencoder which in turn learns the secondary features. We can continue doing this to keep on
+condensing the input as far as we want. We can then use a classifier such as softmax to classify the
+output of last autoencoder. By condensing the data before feeding it to a classifier, we benefit from
+dimensionality reduction and thus increased efficiency.
+
+\begin{enumerate}
+    \item train a sparse autoencoder (SAE) on the inputs $x^{(i)}$ to learn primary features $h^{(1)}$ on the input.
+    \item use the primary features as input to next SAE to learn secondary features $h^{(2)}$ on these primary features.
+    \item use secondary features as input to a classifier.
+    \item combine all layers together to form a SAE with 2 hidden and a classification layer, and apply fine-tuning.
+\end{enumerate}
+
+\newpage
+\subsection{Convolutional Neural Networks (CNNs)}
+
+Images have
+a very large number of input variables (precluding the use of fully connected networks)
+and behave similarly at every position (leading to the idea of parameter sharing).
+
+For $28 \times 28$ images like in MNIST fully connected layers would be feasible.
+But for $96 \times 96$ images, i.e. with $10^4$ inputs, if learning 100 features, then $10^6$ weights would need to be learned.
+
+Therefore there is a need for \textit{locally connected networks}.
+Early visual system in the brain:
+neurons in the visual cortex have localized receptive fields (they respond
+only to stimuli in a certain location).
+
+\paragraph{Explain feature extraction using the convolution and max-pooling operations.}
+
+Natural images have the property of being stationary (i.e. statistics of
+one part of the image are the same as any other part).
+This suggests that the features that we learn at one part of the image,
+e.g. over a smaller $8 \times 8$ patch sampled randomly from a $96 \times 96$ image,
+can also be applied to other parts of the image,
+i.e. the learned $8 \times 8$ feature detector can be applied anywhere in the image.
+
+Convolutions originate from linear time invariant (LTI) systems.
+A general MIMO (multi-input, multi-output) convolution form,
+with $c_\text{in}, c_\text{out}$ the number of input and output channels
+and $\bm{h}_{i,j}$ the convolution kernel that contributes to the $i$-th channel output by convolving with the $j$-th input channel image,
+is:
+
+$$\bm{y}_i = \sum_{j=1}^{c_\text{in}}{ \bm{h}_{i,j} * \bm{x}_j }, \quad i = 1, \dots, c_\text{out}$$
+
+Classically, features were user-defined, e.g. a fixed convolution kernel for edge detection.
+Now, deep feature learning is used.
+
+\begin{enumerate}
+    \item Train a sparse autoencoder on small $a \times b$ patches $x_\text{small}$,
+    learning $k$ \textit{features} $f = \sigma(W^{(1)} x_\text{small} + b^{(1)})$.
+    \item Take the learned $8 \times 8$ features and convolve them with the larger image,
+    which gives a $k \times (r - a + 1) \times (c - b + 1)$ array of \textit{convolved features}.
+    \item \textit{Pool} (given a window, stride, padding) the convolved features to limit the number of features.
+\end{enumerate}
+
+Example: Input image filtered by four $5 \times 5$ convolutional kernels
+which create $4$ feature maps - for (softmax\footnote{
+A softmax classifier produces normalized class probabilities, and
+has a probabilistic interpretation.}) classification -,
+after the feature extraction.
+
+Convolution layers apply filter or kernel to the input image to extract features, such as edges or
+patterns. When we apply this filter over the input image we calculate the dot product and then put the
+output of the dot product unto a feature map. Each filter produces a new feature map, which
+highlights a specific pattern in the input data. The size of the feature map is smaller than the input
+data, as the filter moves over the input, pixels are shared and produce smaller outputs.
+
+Pooling layers down sample the feature maps by reducing their dimensions, while retaining the most
+important information. This helps to reduce the number of parameters and computation required in
+the layers that come next. This is done by taking small sub-regions of the feature map and
+summarizing their contents into a single value.
+
+\paragraph{What is a ResNet architecture?}
+
+A residual neural network takes short-cuts by jumping over some layers -
+inspired by pyramidal cells in the cerebral cortex.
+
+Skip (or residual) connections result in a smoother loss surface, which facilitates learning and
+makes the final network performance more robust to minor errors in the parameters,
+so it will likely generalise better.
+
+DenseNet uses residual connections to concatenate the outputs of earlier layers to later ones.
+The three-channel input image is processed to form a 32-channel representation.
+The input image is concatenated to this to give a total of 35 channels.
+This combined representation is processed to create another 32-channel representation,
+and both earlier representations are concatenated to create a total of 67 channels, and so on.
+
+\paragraph{What is the meaning of invariance and equivariance?}
+
+\begin{itemize}
+    \item Invariance of a function $\bm{f}(\bm{x})$ to a transformation $\bm{t}(\bm{x})$: $\bm{f}( \bm{t}(\bm{x}) ) = \bm{f}(\bm{x})$
+    \item Equivariance of a function $\bm{f}(\bm{x})$ to a transformation $\bm{t}(\bm{x})$: $\bm{f}( \bm{t}(\bm{x}) ) = \bm{t}( \bm{f}(\bm{x}) )$
+\end{itemize}
+
+\paragraph{CNN training}
+
+With a softmax, the average loss for a classification task is the cross-entropy loss between the target and estimated class distribution (provided $y$ is normalised, as is done by the softmax).
+For regression, such as denoising in image processing $\mathbb{E} \lVert y - f_\Theta(x) \rVert_p^p, \, p=1 \text{ or } p=2$ is minimised.
+
+Data augmentation can be applied with creating new training instances
+(e.g. by applying geometric transformations such as mirroring, flipping,
+rotation, on the original image so that it doesn't change the label
+information).
+
+With dropout regularization a neuron is temporarily "dropped" or
+disabled with a certain probability. All the inputs and outputs to some
+neurons will be disabled at the current iteration. The dropped-out
+neurons are resampled with a certain probability at every training step,
+so a dropped-out neuron at one step can be active at the next one [Ye
+2022].
+
+Bagging involves training multiple models and evaluating multiple models on each test example.
+This seems impractical when each model is a large neural network, since training and evaluating such networks is costly in terms of runtime and memory.
+Dropout provides an inexpensive approximation to training and evaluating a bagged ensemble of exponentially many neural networks.
+
+
+\newpage
+\subsection{Generative Models}
+
+Discriminative models learn the decision boundary between the classes.
+Generative models model the probability distribution of each class.
+
+\paragraph{Explain \href{https://medium.com/@heyamit10/a-complete-guide-to-boltzmann-machine-deep-learning-98f8eccfd506}{Restricted Boltzmann Machines}.}
+
+In a Boltzmann Machine, the probability of any configuration is directly related to its energy level.
+Lower energy configurations are more likely to occur than higher energy ones.
+By minimizing the energy of correct configurations,
+the machine essentially "learns" a probability distribution that represents the underlying patterns in the data.
+Boltzmann Machines view learning as a statistical process where different neuron configurations have different probabilities,
+and learning is all about maximizing the likelihood of the observed data.
+
+A Boltzmann Machine is a fully connected Markov Random Field\footnote{
+    A Markov Random Field is an undirected, symmetric PGM that satisfies the Markov Property and can be factorised over cliques.
+} of visible and hidden stochastic binary units.
+The objective is to minimise the overall energy of the system.
+A Restricted Boltzmann Machine is restricted in that it is a bipartite graph -
+there are only intra-layer connections (between hidden and visible units)
+but no interconnections between hidden units nor between visible units.
+This bipartite structure makes explicit marginalisation possible -
+which is why RBMs are more computationally efficient.
+
+A restricted Boltzmann machine is a generative neural network that has no connections within a layer.
+In general, RBMs consist of 2 layers, a hidden layer and an input layer.RBMs were created because the
+connection in Boltzmann machines grow exponentially and thus are hard to train. RBMs are used in
+unsupervised learning tasks such as dimensionality reduction and data generation using Gibbs
+sampling. For more complex data we can use Deep Boltzmann machines which are several RBMs
+stacked on top of each other.
+
+\paragraph{Explain Deep Boltzmann Machines.}
+
+Deep Boltzmann Machines are a type of unsupervised learning models that are made of several layers
+of restricted Boltzmann machines. The difference between this DBM and DBN (deep belief networks)
+is that the connections between the layers at the bottom are also undirected. In these machines the
+surface layers represent the simple low-level features and the deeper layers represent the abstract,
+high-level features. The layers are trained one at a time.
+
+\paragraph{What is Wasserstein training of Restricted Boltzmann Machines?}
+
+Wasserstein distance in RBMs aims to reduce the distance between generated data and input data as
+much as possible. By using the Wasserstein distance we get less noise in the generated data which In
+turns makes the data more accurate. It is easily visualized by using it on image generations for
+example the digits dataset we used in our reports. Here we saw that the generated data with
+Wasserstein had less random white pixels.
+
+\paragraph{What is the principle of GANs?}
+
+Generative adversarial networks can be described as 2 separate neural nets. A generator which tries
+to generate "fake" input data and a discriminator which tries to distinguish fake and real input data.
+The two networks are trained together in a game-like process where the generator tries to generate
+more realistic data to fool the discriminator, while the discriminator tries to correctly classify the real
+and generated data.
+
+\paragraph{What is an ELBO in VAE?}
+
+Given observed data \( X \) and latent variables \( Z \), Bayesian inference seeks the posterior:
+\begin{equation}
+p(Z|X) = \frac{p(X|Z)\, p(Z)}{p(X)}
+\end{equation}
+where
+\begin{equation}
+p(X) = \int p(X|Z)\, p(Z)\, dZ
+\end{equation}
+
+Since \( p(X) \) is generally intractable, we approximate \( p(Z|X) \) with its variational approximation \( q(Z) \) by minimizing:
+\begin{equation}
+\mathrm{KL}(q(Z) \,\|\, p(Z|X)) = \mathbb{E}_{q} \left[ \log \frac{q(Z)}{p(Z|X)} \right]
+\end{equation}
+
+Expanding with Bayes' rule:
+\begin{align}
+\mathrm{KL}(q(Z) \,\|\, p(Z|X)) 
+&= \mathbb{E}_q \left[ \log \frac{q(Z)}{p(Z|X)} \right]\\
+&= \mathbb{E}_q \left[ \log q(Z) - \log p(Z|X) \right]\\
+&= \mathbb{E}_q \left[ \log q(Z) - \log \frac{p(X, Z)}{p(X)} \right]\\
+&= \mathbb{E}_q \left[ \log q(Z) - \log p(X, Z) + \log p(X) \right]\\
+&= \mathbb{E}_q [\log q(Z)] - \mathbb{E}_q [\log p(X, Z)] + \log p(X)
+\end{align}
+
+Thus,
+\begin{equation}
+\log p(X) = \underbrace{\mathrm{KL}(q(Z) \,\|\, p(Z|X))}_{\geq 0} + \mathbb{E}_q [\log p(X, Z)] - \mathbb{E}_q [\log q(Z)]
+\end{equation}
+
+Defining the \textbf{Evidence Lower Bound (ELBO)}, the variational lower-bound for a single data point:
+\begin{equation}
+\mathcal{L}(q) = \mathbb{E}_q [\log p(X, Z)] - \mathbb{E}_q [\log q(Z)] = \mathbb{E}_{q}\left[\log \frac{p(X, Z)}{q(Z)}\right]
+\end{equation}
+we have
+\begin{equation}
+\log p(X) = \mathrm{KL}(q(Z) \,\|\, p(Z|X)) + \mathcal{L}(q)
+\end{equation}
+
+Since \( \mathrm{KL}(q(Z) \,\|\, p(Z|X)) \geq 0 \), \( \mathcal{L}(q) \leq \log p(X) \). Maximizing \(\mathcal{L}(q)\) tightens the bound and improves the approximation.
+Here:
+\begin{itemize}
+    \item $\log p(X)$ is the log-evidence (model evidence), which is \textbf{fixed} for given data $X$.
+    \item $\mathrm{KL}(q(Z)\,\|\,p(Z|X)) \ge 0$ is the Kullback--Leibler divergence between $q(Z)$ and the true posterior.
+    \item $\mathcal{L}(q)$ is the Evidence Lower Bound (ELBO), a function of $q$ alone.
+\end{itemize}
+
+\paragraph{Maximizing ELBO $\Longleftrightarrow$ Minimizing KL Divergence}
+Because $\log p(X)$ is a constant (with respect to $q$), as we increase $\mathcal{L}(q)$, the KL divergence must decrease:
+\begin{equation}
+\mathcal{L}(q)\uparrow \quad \Longrightarrow\quad \mathrm{KL}(q(Z)\,\|\,p(Z|X))\downarrow
+\end{equation}
+The optimal value is reached when $q(Z) = p(Z|X)$, so
+\begin{equation}
+\mathrm{KL}(q(Z)\,\|\,p(Z|X)) = 0
+\end{equation}
+and
+\begin{equation}
+\mathcal{L}(q) = \log p(X)
+\end{equation}
+
+\noindent
+\textbf{However:} In practice, $p(Z|X)$ is intractable. KL cannot be minimized directly. But the ELBO involves only quantities that can be evaluated or estimated, due to our choice of $q(Z)$. optimising the ELBO therefore brings $q(Z)$ as close as allowed (by its form) to the true posterior.
+
+\paragraph{Why is This a Good Approximation?}
+\begin{itemize}
+    \item \textbf{ELBO as a Bound:} $\mathcal{L}(q) \leq \log p(X)$ for all $q(Z)$.
+    \item \textbf{Tightening the Bound:} Maximizing $\mathcal{L}(q)$ tightens this lower bound by making $q(Z)$ approach $p(Z|X)$ in the sense of KL divergence.
+    \item \textbf{Best Approximation in the Family:} Since we can only choose $q(Z)$ from some tractable family (e.g., a factorized Gaussian), maximizing the ELBO finds \emph{the closest $q(Z)$ to $p(Z|X)$ in that family}, as measured by KL divergence.
+\end{itemize}
+
+\bigskip
+
+\noindent
+\textit{Summary:}
+\begin{quote}
+Maximizing the ELBO is equivalent to minimizing the KL divergence between our approximation $q(Z)$ and the true posterior $p(Z|X)$. Because the KL divergence is non-negative and $\log p(X)$ is fixed, optimising the ELBO yields the best possible approximation to the true posterior available within our chosen $q(Z)$ family:
+\[
+\boxed{
+q^{*}(Z) = \arg\max_{q(Z)} \mathcal{L}(q(Z)) = \arg\min_{q(Z)}\, \mathrm{KL}\big(q(Z)\,||\,p(Z|X)\big)
+}
+\]
+\end{quote}
+
+In this way, maximizing the ELBO gives us the ``closest'' and most faithful approximation to the posterior distribution that we can achieve given computational constraints.
+
+
+\newpage
+\subsection{Normalisation}
+
+Normalisation originated from the batch normalisation technique
+(accelerates the convergence of stochastic gradient methods by reducing covariate shift).
+Batch normalisation was further extended to various forms of normalisation,
+such as layer norm, instance norm, and group norm.
+
+\paragraph{What is batch normalisation?}
+
+Batch normalization \cite{ioffe2015batchnormalizationacceleratingdeep}
+was originally proposed to reduce the internal
+covariate shift and improve the speed, performance, and stability of
+artificial neural networks. This problem is particularly severe for deep
+networks because small changes in shallower hidden layers are amplified
+as they propagate through the network, causing a significant shift in
+deeper hidden layer.
+
+Batch normalisation accelerates the convergence of stochastic gradient methods
+by reducing covariate shift.
+
+Reduce these undesirable shifts and normalise values in each layer by centering and rescaling to have $0$ mean and $1$ variance.
+
+For each hidden unit $h_i$ compute $h_i \leftarrow \frac{g}{\sigma} (h_i - \mu)$
+where $g$ is a variable, $\mu = \frac{1}{H} \sum_{i=1}^H{h_i}$ and
+$\sigma = \sqrt{\frac{1}{HW} \sum_{i=1}^H{(h_i - \mu)^2}}$
+over the mini-batch.
+
+This reduces covariate shift (i.e. gradient dependencies between each layer) and therefore
+fewer training iterations are needed, speeding up training.
+
+Advantages:
+
+\begin{itemize}
+    \item Can increase learning rate without gradients vanishing or exploding.
+    \item Appears to have a regularisation effect, thus there is less of a need
+          use other types of regularisation like dropout to reduce overfitting.
+    \item More robust toward different initialisation schemes and learning rates.
+\end{itemize}
+
+\paragraph{What is layer normalisation?}
+
+Layer normalisation computes the mean and standard deviation
+along the channel and image direction without considering the mini-batch.
+
+Thus, each sample has a different normalisation operation,
+allowing arbitrary mini-batch sizes to be used.
+
+Experimentally layer normalisation performs well for RNNs.
+
+\paragraph{What is instance normalisation?}
+
+Instance normalisation normalises the feature data for each sample and channel.
+
+$$
+\bm{y}_c = \frac{\gamma_c}{\sigma_c} (\bm{x}_c - \mu_c \bm{1}) + \beta_c  \bm{1}, \qquad c = 1, \dots, C
+$$
+
+where $\gamma_c, \beta_c$ are trainable parameters for each channel $c$, and
+
+$$
+\mu_c = \frac{1}{HW} \bm{1}^T \bm{x}_c, \quad
+\sigma_c^2 = \frac{1}{HW} \lVert \bm{x}_c - \mu_c \bm{1} \rVert
+$$
+
+\paragraph{What is style transfer?}
+
+Style transfer: convert content images into a stylised image
+that is guided by a certain style image.
+
+Adaptive instance normalisation (AdaIN): calculate $\gamma_c, \beta_c$
+as the standard deviation and mean value of the style image:
+
+$$
+\beta_c^{(s)} = \frac{1}{HW} \bm{1}^T \bm{s}_c, \quad
+\gamma_c^{(s)} = \big( \frac{1}{HW} \lVert \bm{s}_c - \beta_c^2 \bm{1} \rVert \big)^\frac{1}{2}
+$$
+
+AdaIN is a special case (when the covariance matrix is diagonal) of the
+Whitening and Colouring Transform (WCT):
+$B_{x, s}$ as in AdaIN, whitening transform $T_x$,
+colouring transform $T_s$.
+
+$$Y = X T_x T_s + B_{x, s}$$
+
+StyleGAN: generator generates content feature vectors from random noise.
+AdaIN layer combines content and style features to generate more realistic features.
+(Fundamentally different from GANs where the fake image is only generated by a content generator.)
+
+\newpage
+\subsection{Attention}
+
+Cognitive neuroscience: selectively focusing on one aspect of information.
+
+\begin{itemize}
+    \item Ionotropic receptors can open or close a channel
+          so that different types of ions can migrate in and out of the cell.
+    \item Metabotropic receptors only indirectly influence the opening and closing of ion channels,
+          but they have more of a prolonged effect.
+\end{itemize}
+
+\paragraph{What is an attention mechanism, query and key?}
+
+Let $x_n$ be the number of neurotransmitters that bind to the $n$-th synapse.
+G-proteins generate the secondary messengers that bind to the ion channel at the $m$-th synapse with sensitivity $q_m$.
+The number of G-proteins generated at the $n$-th synapse is proportional to the metabotropic receptor's sensitivity $k_n$.
+The total amount of ion influx from the $m$-th synapse then is
+
+$$y_m = \sum_{n=1}^N{q_m k_n x_n}, \quad m = 1, \dots, N$$
+$$\bm{y} = q k^T x = T x, \quad T = q k^T, \quad \text{rank}(T) = 1$$
+
+Attention mechanism:
+for a particular key $k$, changing the query $q$ gives a different activation pattern $y$.
+Thus, by decoupling key and query, neuronal activation patterns can be dynamically adapted.
+
+In neural networks, the row vector output at the $m$-th pixel is
+
+$$
+(\bm{y}_m)^T = \sum_{n=1}^N{a_{mn} \bm{x}^n}, \quad m = 1, \dots, N \quad
+\bm{q}_m \in \mathbb{R}^d, \bm{k}_n \in \mathbb{R}^d, \bm{x}_n \in \mathbb{R}^C
+$$
+
+$$
+a_{mn} = \frac{\exp\big( \text{sim-score}(\bm{q}_m, \bm{k}_n) \big)}{ \sum_{n' = 1}^N{\exp\big( \text{sim-score}(\bm{q}_m, \bm{k}_{n'}) \big)} }
+$$
+
+\begin{itemize}
+    \item Dot product: $\langle \bm{q}_m, \bm{k}_n \rangle$
+    \item Scaled dot product: $\langle \bm{q}_m, \bm{k}_n \rangle / \sqrt{d}$
+    \item Cosine similarity: $\frac{\langle \bm{q}_m, \bm{k}_n \rangle}{\lVert \bm{q}_m \rVert \lVert \bm{k}_n \rVert}$
+\end{itemize}
+
+In dot product attention, the query and key vectors are usually generated using linear embeddings.
+Often one is interested in a smaller-dimensional value vector $\bm{v}_n$
+Attention computes a weighted average of a set of values,
+where the weights are derived by comparing the query vector to a set of keys with a scoring function:
+Query, compare with each Key via scoring function, run each through softmax to get attention weights that \textit{sum to one},
+weight values by their weights to get the output.
+
+Attention is a neural architecture that mimics the retrieval of a value $v_i$ for a query $q$
+based on a key $k_i$ in a database: "if the key matches the query, return its associated value".
+
+$$\text{Attention}(q, \bm{k}, \bm{v}) = \sum_i{\text{Similarity}(q, k_i) \times v_i}$$
+
+The only difference between database retrieval and attention in a sense is that in database
+retrieval we only get one value as input, but here we get a weighted combination of values.
+
+Similarity can be a simple dot product of the query and the key. It can be scaled dot product,
+where the dot product of q and k, is divided by the square root of the dimensionality of each key, d.
+These are the most commonly used two techniques to find the similarity.
+
+Often a query is projected into a new space by using a weight matrix W, and then a dot product
+is made with the key k. Kernel methods can also be used as a similarity.
+
+Masking to prevent later tokens from influencing earlier ones.
+
+\paragraph{What is self-attention?}
+
+The advantage of the attention mechanism is to separate control of query and key vectors.
+
+In a self-attention block, both query and key are obtained from the same dataset.
+It tries to extract which part of the (single) input signal needs to be focused.
+
+Self-attention can learn the relationship between a pixel and all other positions, to handle details better.
+
+Self-attention GAN (SAGAN): self-attention layers so both generator and discriminator can better capture relationships between spatial regions.
+The self-attended feature vector $\bm{o}^n$ is generated at the $n$-th pixel location
+by the linear combination of the value vectors \textit{across the whole image}
+by weighting the elements of the attention map $A$:
+
+$$Y = AV = AX W_V, \qquad O = Y W_O$$
+
+The receptive field of the self-attention map is an overall image,
+which makes image generation more effective;
+but can be computationally expensive (matrix multiplication of $N \times N$ attention map $A$).
+
+To address the computational complexity, channel attention techniques have been developed:
+the squeeze and excitation network (SENet) squeezes using average pooling,
+followed by the excitation step which involves a neural network.
+
+\begin{enumerate}
+    \item Input $X_{D \times N}$ with $N$ input vectors $\bm{x}_n$ as its column vectors. Operated on separately by query, key, value matrices.
+    \item $Q_{D \times N} = \beta_q \bm{1}^T + \Omega_q X$. (biases and weights)
+    \item $K_{D \times N} = \beta_k \bm{1}^T + \Omega_k X$.
+    \item Attention $A_{N \times N} = \text{softmax}(K^T Q)$.
+    \item $V_{D \times N} = \beta_v \bm{1}^T + \Omega_v X$.
+    \item Output same dimension as input $Y_{D \times N} = V \cdot \text{softmax}(K^T Q)$.
+\end{enumerate}
+
+The overall self-attention  computation is nonlinear because the attention weights are themselves nonlinear functions of the input.
+This is an example of a hypernetwork, where one network branch computes the weights of another.
+
+\paragraph{What is multi-head attention?}
+
+Multi-head $\approx$ "multiple \textit{concatenated} feature maps".
+The concatenation is vertical. Another linear combination is used to recombine them:
+
+$$\Omega_c \big( [ A_1(X), A_2(X) ]^T \big)^T$$
+
+\textit{Masked} multi-head attention: multi-head where some values are masked
+(i.e. probabilities of masked values are nullified to prevent them from being selected).
+When decoding, an output value should depend only on previous outputs (not future outputs).
+Hence we mask future outputs.
+
+$$\text{Attention}(Q, K, V) = \text{softmax}\big(\frac{Q^T K}{\sqrt{d_k}}\big) V$$
+
+$$\text{MaskedAttention}(Q, K, V) = \text{softmax}\big(\frac{Q^T K + M}{\sqrt{d_k}}\big) V$$
+
+Note: softmax produces a distribution that adds up to one, therefore important to add $M$ inside softmax term.
+
+Interestingly, it appears that most
+of the heads can be pruned after training without critically affecting the performance (Voita
+et al., 2019); it has been suggested that their role is to guard against bad initializations.
+
+\paragraph{What is cross-domain attention?}
+
+The flow of computation is the same as in standard self-attention,
+but the queries are now calculated from the decoder embeddings
+(while the keys and values are from the encoder embeddings).
+
+\begin{enumerate}
+    \item Decoder input $X_{\text{dec}, D \times N_\text{dec}}$ with $N_\text{dec}$ input vectors $\bm{x}_n$ as its column vectors.
+    \item Encoder input $X_{\text{enc}, D \times N_\text{enc}}$ with $N_\text{enc}$ input vectors $\bm{x}_n$ as its column vectors.
+    \item $Q_{D \times N_\text{dec}} = \beta_q \bm{1}^T + \Omega_q X_\text{dec}$.
+    \item $K_{D \times N_\text{enc}} = \beta_k \bm{1}^T + \Omega_k X_\text{enc}$.
+    \item Attention $A_{N_\text{enc} \times N_\text{dec}} = \text{softmax}(K^T Q)$.
+    \item $V_{D \times N_\text{enc}} = \beta_v \bm{1}^T + \Omega_v X_\text{enc}$.
+    \item Output same dimension as decoder input $Y_{D \times N_\text{dec}} = V \cdot \text{softmax}(K^T Q)$.
+\end{enumerate}
+
+Attentional GAN (AttnGAN) for text-to-image generation:
+Query vector generated from image areas,
+key vector generated from word features by sentence embedding.
+Selects the word-level condition to generate different parts of the image.
+
+Machine translation: a sequence-to-sequence task that requires an encoder-decoder model with cross-attention.
+The encoder learns the language embedding (i.e. the structural role of each word within a sentence) from the tokenised input,
+decoder performs language translation (uses encoder embeddings to generate key vectors, which are combined with the query vector that is generated from the target language).
+
+\newpage
+\subsection{Transformers}
+
+\paragraph{What are transformers?}
+
+In order to learn long-range dependencies between words within a sentence,
+the self-attention mechanism is used on the encoder.
+
+In addition to self-attention, there are:
+
+\begin{itemize}
+    \item residual connections,
+    \item layer normalisation,
+    \item a feed-forward NN,
+    \item additional units of encoder blocks.
+\end{itemize}
+
+The sharing of parameters in the network architecture facilitates the massively parallel
+processing of the transformer, and also allows the network to learn long-range
+dependencies just as effectively as short-range dependencies. However, the lack of
+dependence on token order becomes a major limitation when we consider sequential
+data, such as the words in a natural language, because the representation learned by
+a transformer will be independent of the input token ordering.
+
+In contrast to RNNs, processes the entire sequence in parallel,
+to capture longer-distance dependencies in sequences.
+But the model does not have any notion of position  (which is important for grammar and semantics!) for each word:
+it is equivariant with respect to input permutations.
+
+Positional encoding: should output a unique encoding of the position of each word in a sentence and easily generalise to longer sentences.
+
+Let $n$ be the desired position in an input setence, and $d$ the encoding dimension (an even number!).
+The position encoding vector, which is added to the word embedding vector to obtain a position-encoded word embedding vector $\bm{x}_n \in \mathbb{R}^d$ to feed into the Transformer's self-attention model,
+is given by
+
+$$
+\bm{p}_n = \begin{bmatrix}
+    \sin(\omega_1 n) \\
+    \cos(\omega_1 n) \\
+    \sin(\omega_2 n) \\
+    \cos(\omega_2 n) \\
+    \vdots \\
+    \sin(\omega_{\frac{d}{2}} n) \\
+    \cos(\omega_{\frac{d}{2}} n) \\
+\end{bmatrix} \in \mathbb{R}^d, \quad
+\omega_k = \frac{1}{10,000^{2k / d}}, \qquad
+\bm{x}_n \leftarrow \bm{x}_n + \bm{p}_n
+$$
+
+Transformers have a low computational complexity per layer,
+and much of the computation can be performed in parallel using the matrix form. Since
+every input embedding interacts with every other, it can describe long-range dependencies
+in text. Ultimately, the computation scales quadratically with the sequence length
+
+\paragraph{What are the inputs in a transformer?}
+
+One problem with using a fixed dictionary of words is that it cannot cope with
+words not in the dictionary or which are misspelled. It also does not take account
+of punctuation symbols or other character sequences such as computer code. An
+alternative approach that addresses these problems would be to work at the level of
+characters instead of using words, so that our dictionary comprises upper-case and
+lower-case letters, numbers, punctuation, and white-space symbols such as spaces
+and tabs. A disadvantage of this approach, however, is that it discards the semantically
+important word structure of language, and the subsequent neural network would
+have to learn to reassemble words from elementary characters. It would also require
+a much larger number of sequential steps for a given body of text, thereby increasing
+the computational cost of processing the sequence.
+We can combine the benefits of character-level and word-level representations
+by using a pre-processing step that converts a string of words and punctuation symbols
+into a string of tokens, which are generally small groups of characters and might
+include common words in their entirety, along with fragments of longer words as
+well as individual characters that can be assembled into less common words (Schuster and Nakajima, 2012).
+
+Tokenisation: As an example, a technique called
+byte pair encoding that is used for data compression, can be adapted to text tokenization
+by merging characters instead of bytes (Sennrich, Haddow, and Birch, 2015).
+The process starts with the individual characters and iteratively merges them into
+longer strings. The list of tokens is first initialized with the list of individual characters.
+Then a body of text is searched for the most frequently occurring adjacent
+pairs of tokens and these are replaced with a new token. To ensure that words are not
+merged, a new token is not formed from two tokens if the second token starts with a
+white space. The process is repeated iteratively
+
+\paragraph{BERT vs. GPT}
+
+Encoder models like BERT exploit transfer learning.
+
+Bidirectional Encoder Representations from Transformers (BERT):
+can be used for different purposes and languages by simply changing the training scheme.
+
+\begin{enumerate}
+    \item Pre-training to learn parameters using self-supervised learning: guess the masked word in an input sentence (where 15\% of words are masked with a specific token \texttt{[MASK]}) from the embedded output in the same place.
+    \item Fine-tuning using supervised learning tasks.
+\end{enumerate}
+
+Text classification: In BERT, a special token known as the classification or \texttt{<cls>}
+token is placed at the start of each string during pre-training. For text classification
+tasks like sentiment analysis (in which the passage is labeled as having a positive or
+negative emotional tone), the vector associated with the \texttt{<cls>} token is mapped to a
+single number and passed through a logistic sigmoid which contributes to a standard binary cross-entropy loss.
+
+Decoder models like GPT are autoregressive generators.
+
+Generative Pre-Trained Transformer (GPT):
+The goal is similar to BERT pre-training, generating the next word - hence the name.
+Scaling greatly improves task-agnostic, few-shot performance.
+This is a major reason for the sucess of GPT (e.g. GPT-3 with 175B parameters vs. BERT with 340M parameters):
+its massive architecture makes generative pre-training even more powerful than fine-tuning.
+
+The process of choosing tokens from these probability distributions is known as \textbf{decoding}.
+It is not computationally feasible to try every combination of tokens in the output sequence
+($\mathcal{O}(K^N)$ which grows exponentially with the length of the sequence; greedy search has cost $\mathcal{O}(KN)$ linear in the sequence length)
+but it is possible to maintain a fixed number of parallel hypotheses and choose the most likely
+overall sequence. This is known as beam search and has cost $\mathcal{O}(B K N)$ where $B$ is the beam width.
+Beam search keeps track of multiple possible sentence completions to find the overall most
+likely (which is not necessarily found by greedily choosing the most likely next word at
+each step). Top-k sampling randomly draws the next word from only the top-K most
+likely possibilities to prevent the system from accidentally choosing from the long tail of
+low-probability tokens and leading to an unnecessary linguistic dead end.
+
+Generative next-word estimation can be done by a Transformer decoder.
+GPT-3 consists of a stack of 96 Transformer decoder layers
+(vs. BERT's encoder-only architecture).
+
+Each decoder layer is composed of multiple decoder blocks,
+which consist of masked self-attention blocks with a width of 2048 tokens
+and a feedforward neural network.
+
+\begin{itemize}
+    \item The \textit{masked self-attention} in GPT calculates the attention matrix using the
+          \textbf{preceding} (to not cheat!) words in a sentence that can be used to estimate the next word.
+    \item Self-attention in BERT is applied to the entire sentence.
+\end{itemize}
+
+Few-shot learning: A surprising property of large language models like GPT is that they can perform many tasks without fine-tuning!
+If we provide several examples of correct question/answer pairs
+and then another question, they often answer the final question correctly by completing
+the sequence.
+
+Encoder models like BERT use only the encoder part of the original Transformer architecture (from Vaswani et al., 2017).
+It's designed for understanding tasks: classification, question answering, etc.
+It takes in a full sentence or passage at once (bidirectional), and each token attends to all others — both left and right.
+
+Decoder models like GPT are trained to generate text by predicting the next token, given previous ones (autoregressive).
+Each token only attends to earlier tokens (causal masking).
+
+Encoder-decoder models like T5 / BART are used for sequence-to-sequence tasks like machine translation, summarization, etc.
+
+Encoders learn a representation that can be used for other tasks by predicting missing tokens.
+Decoders build an autoregressive model over the inputs and are an example of a generative model in this book.
+The generative decoders can be used to create new data examples.
+
+\begin{itemize}
+    \item Encoder: input sequence, output single variable, e.g. sentiment analysis.
+    \item Decoder: input single vector, output a probability distribution over values for the next token to generate a word sequence, i.e. generative models.
+    \item Encoder-decoder: sequence-to-sequence processing tasks.
+\end{itemize}
+
+\paragraph{What are the Vision Transformer and ImageGPT architectures?}
+
+The ViT breaks the image into a grid of patches ($16 \times 16$ in the original implementation).
+Each of these is projected via a learned linear transformation to become a patch embedding.
+These patch embeddings are fed into a transformer encoder network, and the \texttt{<cls>} token is used to predict the class probabilities.
+
+To handle 2D images, the input image is reshaped into a sequence of flattened 2D patches,
+after each patch is embedded into a $D$-dimensional vector using a trainable linear projection.
+
+Then a constant latent vector size $D$ is used throughout all layers.
+Position encodings are added to the patch embeddings to retain positional information.
+The resulting sequence of embedding vectors serves as input to the encoder.
+
+The Transformer encoder in ViT consists of alternating layers of multi-headed
+self-attention and MLP blocks. The MLP contains two layers
+with GELU (Gaussian Error Linear Units) non-linearity. ViT is trained
+on large data sets, and fine-tuned to (smaller) downstream tasks.
+
+ImageGPT: autoregressive image generation, and image completion.
+
+\paragraph{Compare Transformer Networks to RNNs.}
+
+Challenges with RNNs include long-range dependencies, gradient vanishing and explosion,
+requiring a large number of training steps (due to recurrence), and
+not being suitable for parallel computation (again, due to recurrence).
+
+Transformer networks facilitate long-range dependencies through use of the attention mechanism.
+There is no gradient vanishing or explosion, fewer training steps are needed,
+and no recurrence relation is needed - which facilitates parallel computation.
+
+Complexity?
+
+The complexity of the self-attention mechanism increases quadratically with the sequence length.
+
+Recurrent neural networks (RNNs): The word embeddings are
+passed sequentially through a series of identical neural networks. Each network
+has two outputs; one is the output embedding, and the other (orange arrows)
+feeds back into the next neural network, along with the next word embedding.
+Each output embedding contains information about the word itself and its context
+in the preceding sentence fragment. In principle, the final output contains
+information about the entire sentence and could be used to support classification
+tasks similarly to the \texttt{<cls>} token in a transformer encoder model. However,
+RNNs sometimes gradually "forget" about tokens that are further back in time.
+
+LSTMs and GRUs partially address this.
+But there was also the idea that certain
+output words should attend more to certain input words according to their relation (Bahdanau
+et al., 2015). This ultimately led to dispensing with the recurrent structure and replacing it with
+the encoder-decoder transformer (Vaswani et al., 2017)
+Here input tokens attend to one another
+(self-attention), output tokens attend to those earlier in the sequence (masked self-attention),
+and output tokens also attend to the input tokens (cross-attention). 
+Vaswani targeted translation tasks, but transformers are now more usually used to build either pure encoder (e.g. BERT)
+or pure decoder models (e.g. GPT).
+Since GPT3, many decoder language models have been released with steady improvement in
+few-shot results.
+
+Attention was originally developed as an enhancement to RNNs for machine translation (Bahdanau,Section 12.2.5
+Cho, and Bengio, 2014). However, Vaswani et al. (2017) later showed that significantly
+improved performance could be obtained by eliminating the recurrence structure
+and instead focusing exclusively on the attention mechanism. Today, transformers
+based on attention have completely superseded RNNs in almost all applications.
+
+\paragraph{What are the limitations of Transformers?}
+
+Two of the main limitations of Transformers are quadratic scaling and tokenisation.
+
+The self-attention mechanism is a simple and elegant way to extract patterns from input embeddings.
+The source modality of these tokens (text, images, sound) and their arrival order are irrelevant.
+Self-attention enables effective comparison between all tokens in a set.
+
+This differs from architectures like CNNs or RNNs, which are tailored to specific modalities.
+While this makes them more data efficient, the scalability of transformers often compensates:
+we can increase dataset size until the advantage of more biased models diminishes.
+
+However, creating input embeddings remains highly modality-dependent.
+Additionally, the quadratic scaling of self-attention limits embedding granularity.
+Creating 10x more embeddings from the same input requires 100x more compute.
+Tokenization is simply a (quite brutal) way of limiting the granularity of these embeddings to individual tokens to ensure scaling.
+However, for text data this leads to issues like language bias and challenges in reading numbers.
+Similar issues exist in other modalities and even more creep up once we combine them.
+
+The Byte Level Transformer (BLT; recent Meta paper, \cite{pagnoni2024bytelatenttransformerpatches}) addresses these issues by using raw-byte data and
+dynamically allocating compute based on a learnable method of grouping bytes into patches.
+These batches don't have a fixed size and, unlike tokenization, BLT has no fixed vocabulary.
+
+This results in a more efficient allocation of compute and holds the promise of ultimately combining different modalities at the byte level.

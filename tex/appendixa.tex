@@ -1,0 +1,103 @@
+\section{Delta Rule}
+\label{appendix:delta-rule}
+
+Consider the outputs $x_{i, p}^L$ of a neural network, and the mean-squared error (MSE)
+empirical risk\footnote{
+The \textit{error} is the difference between predicted and desired output, $x_{j, p}^L - x_{j, p}^d$, for a pattern $p$.
+\textit{Loss} is a measure of the prediction quality, e.g. the mean squared error (MSE), $E_p = \frac{1}{2} \sum_{j=1}^{N_L}{( x_{j, p}^L - x_{j, p}^d )^2}$, for a pattern $p$.
+\textit{Risk} is the expected loss over the entire data distribution.
+\textit{Empirical risk} or \textit{training error} is the average loss over the training dataset or expected empirical loss, $E = \frac{1}{P} \sum_{p=1}^P{ E_p }$.
+\citep{wikipedia2025empiricalriskminimization}
+} $E$ which is to be minimised for the patterns (i.e. data points) $p = 1, \dots, P$:
+
+\begin{equation}
+    E = \frac{1}{P} \sum_{p=1}^P{ E_p }
+    = \frac{1}{2P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ (x_{i, p}^L - x_{i, p}^\text{desired})^2 } }
+\end{equation}
+
+\begin{equation}
+\begin{split}
+    x_{i, p}^L = \sigma( \xi_{i, p}^L ), \qquad
+    & \xi_{i, p}^L = \sum_{j = 1}^{N_{L-1}}{ w_{i, j}^L x_{j, p}^{L-1} }, \\
+    x_{j, p}^{L-1} = \sigma( \xi_{j, p}^{L-1} ), \qquad
+    & \xi_{j, p}^{L-1} = \sum_{k = 1}^{N_{L-2}}{ w_{j, k}^{L-1} x_{k, p}^{L-2} }, \\
+    & \vdots \\
+    x_{r, p}^2 = \sigma( \xi_{r, p}^2 ), \qquad
+    & \xi_{r, p}^2 = \sum_{s = 1}^{N_1}{ w_{r, s}^2 x_{s, p}^1 }, \\
+    x_{s, p}^1 = \sigma( \xi_{s, p}^1 ), \qquad
+    & \xi_{s, p}^1 = \sum_{t = 1}^{N_0}{ w_{s, t}^1 x_{t, p}^0 }
+    \label{eq:outputs}
+\end{split}
+\end{equation}
+
+The empirical risk can be minimised by iteratively updating the weights:
+
+\begin{equation}
+    \Delta w_{i, j}^l \leftarrow - \eta \min_{w_{i, j}^l}{E} \quad \equiv \quad
+    \Delta w_{i, j}^l \leftarrow - \eta \frac{\partial E}{\partial w_{i, j}^l} \quad \forall i, j; l = 1, \dots, L
+\end{equation}
+
+These partial derivatives can be computed by applying the \textit{chain rule}:
+
+\begin{equation}
+\begin{split}
+\frac{\partial E}{\partial w_{i, j}^L}
+    & = \frac{\partial}{\partial w_{i, j}^L} \frac{1}{2P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ ( x_{i, p}^L - x_{i, p}^\text{desired} )^2 } }
+    = \frac{1}{P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ ( x_{i, p}^L - x_{i, p}^\text{desired} ) } \frac{\partial}{\partial w_{i, j}^L} x_{i, p}^L } \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ ( x_{i, p}^L - x_{i, p}^\text{desired} ) \sigma'( \xi_{i, p}^L ) } \frac{\partial}{\partial w_{i, j}^L} \xi_{i, p}^L } \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ \delta_{i, p}^L } x_{j, p}^{L-1} }
+    ,\qquad \text{where} \quad \delta_{i, p}^L = ( x_{i, p}^L - x_{i, p}^\text{desired} ) \sigma'( \xi_{i, p}^L ) \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \delta_{i, p}^L x_{j, p}^{L-1} }
+    ,\qquad \quad \, \, \, \text{if there is a single output neuron, i.e. } N_L = 1
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\frac{\partial E}{\partial w_{j, k}^{L-1}}
+    & = \frac{\partial}{\partial w_{j, k}^{L-1}} \frac{1}{2P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ ( x_{i, p}^L - x_{i, p}^\text{desired} )^2 } }
+    = \frac{1}{P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ \delta_{i, p}^L w_{i, j}^L } \frac{\partial}{\partial w_{j, k}^{L-1}} x_{j, p}^{L-1} } \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ \delta_{i, p}^L w_{i, j}^L } \sigma'( \xi_{j, p}^{L-1} ) \frac{\partial}{\partial w_{j, k}^{L-1}} \xi_{j, p}^{L-1} }
+    = \frac{1}{P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ \delta_{i, p}^L w_{i, j}^L } \sigma'( \xi_{j, p}^{L-1} ) } x_{k, p}^{L-2} \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \delta_{j, p}^{L-1} x_{k, p}^{L-2} }
+    , \qquad \text{where} \quad \delta_{j, p}^{L-1} = \Big( \sum_{i=1}^{N_L}{ \delta_{i, p}^L w_{i, j}^L } \Big) \sigma'( \xi_{j, p}^{L-1} )
+\end{split}
+\end{equation}
+
+\begin{equation*}
+    \vdots
+\end{equation*}
+
+\begin{equation}
+\begin{split}
+\frac{\partial E}{\partial w_{s, t}^1}
+    & = \frac{\partial}{\partial w_{s, t}^1} \frac{1}{2P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ ( x_{i, p}^L - x_{i, p}^\text{desired} )^2 } }
+    = \frac{1}{P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ \delta_{i, p}^L } \sum_{j = 1}^{N_{L-1}}{ w_{i, j}^L \frac{\partial}{\partial w_{s, t}^1} x_{j, p}^{L-1} } } \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \sum_{i=1}^{N_L}{ \delta_{i, p}^L } \sum_{j = 1}^{N_{L-1}}{ w_{i, j}^L \sigma'(\xi_{j, p}^{L-1}) \frac{\partial}{\partial w_{s, t}^1} \xi_{j, p}^{L-1} } } \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \sum_{j = 1}^{N_{L-1}}{ \delta_{j, p}^{L-1} \sum_{k = 1}^{N_{L-2}}{ w_{j, k}^{L-1} \frac{\partial}{\partial w_{s, t}^1} x_{k, p}^{L-2} } } }
+    , \quad \text{where} \quad \delta_{j, p}^{L-1} = \Big( \sum_{i=1}^{N_L}{ \delta_{i, p}^L w_{i, j}^L } \Big) \sigma'( \xi_{j, p}^{L-1} ) \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \sum_{j = 1}^{N_{L-1}}{ \delta_{j, p}^{L-1} \sum_{k = 1}^{N_{L-2}}{ w_{j, k}^{L-1} \sigma'(\xi_{k, p}^{L-2}) \frac{\partial}{\partial w_{s, t}^1} \xi_{k, p}^{L-2} } } } \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \sum_{k = 1}^{N_{L-2}}{ \delta_{k, p}^{L-2} \frac{\partial}{\partial w_{s, t}^1} \xi_{k, p}^{L-2} } }
+    , \qquad \qquad \quad \text{where} \quad \delta_{k, p}^{L-2} = \Big( \sum_{j = 1}^{N_{L-1}}{ \delta_{j, p}^{L-1} w_{j, k}^{L-1} } \Big) \sigma'(\xi_{k, p}^{L-2}) \\
+    & \vdots \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \sum_{r=1}^{N_2}{ \delta_{r, p}^2 w_{r, s}^2 } \sigma'( \xi_{s, p}^1 ) \frac{\partial}{\partial w_{s, t}^1} \xi_{s, p}^1 } \\
+    & = \frac{1}{P} \sum_{p=1}^P{ \delta_{s, p}^1 x_{t, p}^0 }
+    , \qquad \qquad \qquad \qquad \qquad \, \, \, \text{where} \quad \delta_{s, p}^1 = \Big( \sum_{r=1}^{N_2}{ \delta_{r, p}^2 w_{r, s}^2 } \Big) \sigma'( \xi_{s, p}^1 )
+\end{split}
+\end{equation}
+
+The generalised delta rule\footnote{
+Mini-batch or stochastic gradient descent (SGD) considers one pattern at a time, i.e. $P = 1$.
+The overall effect of averaging over the patterns then applies over batches or iterations.
+} captures the recursive nature of the derivatives:
+\begin{equation}
+\begin{split}
+    \Delta w_{i, j}^l \leftarrow - \eta \frac{\partial E}{\partial w_{i, j}^l}
+    & = - \eta \frac{1}{P} \sum_{p=1}^P{ \frac{\partial E}{\partial \xi_{i,p}^l} \frac{\partial \xi_{i,p}^l}{\partial w_{i,j}^l} }
+    = - \eta \frac{1}{P} \sum_{p=1}^P{ \delta_{i, p}^l x_{j, p}^{l-1} }, \quad l = 1, \dots, L \\
+    \delta_{i, p}^L = \frac{\partial E}{\partial \xi_{i, p}^L}
+    & = ( x_{i, p}^L - x_{i, p}^\text{desired} ) \sigma'( \xi_{i, p}^L ), \quad \text{for output layer with } N_L = 1 \\
+    \delta_{j, p}^l = \frac{\partial E}{\partial \xi_{j, p}^l}
+    & = \Big( \sum_{i=1}^{N_{l+1}}{ \delta_{i, p}^{l+1} w_{i, j}^{l+1} } \Big) \sigma'( \xi_{j, p}^l ), \quad l = 1, \dots, L-1
+\end{split}
+\end{equation}
